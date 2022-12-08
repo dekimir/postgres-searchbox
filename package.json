@@ -1,0 +1,36 @@
+{
+  "name": "postgres-searchbox",
+  "version": "1.0.0",
+  "description": "Enables react-instantsearch to work directly on PostgreSQL tables",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dekimir/postgres-searchbox.git"
+  },
+  "keywords": [
+    "postgres",
+    "search",
+    "searchbox",
+    "instantsearch",
+    "algolia",
+    "elastic",
+    "react"
+  ],
+  "author": "Dejan Mircevski",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dekimir/postgres-searchbox/issues"
+  },
+  "homepage": "https://github.com/dekimir/postgres-searchbox#readme",
+  "dependencies": {
+    "node-sql-parser": "^4.6.1",
+    "pg": "^8.8.0",
+    "pg-format": "^1.0.4"
+  }
+}
