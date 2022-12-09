@@ -110,23 +110,6 @@ In the `<Hit>` component, you can access any row field using `{hit.<fieldname>}`
 This package is a work in progress, so not all InstantSearch components work yet.  Most notably, the pagination and
 highlight components aren't ready for prime-time.
 
-It is not possible to compile the whole package using `webpack` due to the [`pg-native`
-issue](https://github.com/serverless-heaven/serverless-webpack/issues/78).  This is a problem if your framework
-attempts to webpack `postgres-searchbox` (like e.g. NextJS does) and you don't have `pg-native` installed already.
-The workaround is to [use the `webpack
-IgnorePlugin`](https://github.com/serverless-heaven/serverless-webpack/issues/78#issuecomment-720130181).  Here's
-how you can do that in NextJS: add the following content to the `next.config.js` file:
-```javascript
-const nextConfig = {
-  // ...
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    config.plugins.push(new webpack.IgnorePlugin({ resourceRegExp: /^pg-native$/ }))
-    return config
-  }
-  // ...
-}
-```
-
 ## Postgres text-search limitations
 
 Postgres is not quite at the Elastic level of functionality yet.  For example, it doesn't offer spell-corrections
