@@ -30,7 +30,6 @@
   },
   "homepage": "https://github.com/dekimir/postgres-searchbox#readme",
   "dependencies": {
-    "node-sql-parser": "^4.6.1",
     "pg": "^8.8.0",
     "pg-format": "^1.0.4"
   }
