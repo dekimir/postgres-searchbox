@@ -20,7 +20,7 @@ for await (const line of rl) {
   }
 }
 
-const valExpr = textColumns.map(c => `COALESCE("${c}", '') || ''`).join(' || ')
+const valExpr = textColumns.map(c => `COALESCE("${c}", '') || ' '`).join(' || ')
 
 console.log(
   `ALTER TABLE "${table}" ADD COLUMN postgres_searchbox_v1_doc tsvector GENERATED ALWAYS AS (to_tsvector('english', ${valExpr})) STORED;`)
