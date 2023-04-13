@@ -120,7 +120,7 @@ It's also worth mentioning that `postgres-searchbox` currently requires a precis
 non-ASCII letters).  This will be remedied in the future by using the
 [`unaccent`](https://www.postgresql.org/docs/current/unaccent.html) dictionary.
 
-# Contributing
+# Contributing
 
 A config for VSCode dev containers and docker-compose file are included for developer convenience, but they don't have to be used.
 
