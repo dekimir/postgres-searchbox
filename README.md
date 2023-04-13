@@ -54,27 +54,26 @@ Here is how you can make your Postgres data searchable in three easy steps:
 ## Create a Search Index for Your Postgres Table
 
 `postgres-searchbox` includes a script that can generate the SQL commands for creating a search index on the table
-you want to search.  The script is named `mk-idx.mjs`; it reads the table definition on its input, processes it,
-and outputs a sequence of SQL commands that will create a search index when you send them to your Postgres
-database.  This index will cover all text columns in the table, allowing a single searchbox to match against all
-the text the table contains.
+you want to search.  The script is at `scripts/create-index.js`; it reads the table definition and creates a search 
+index in thePostgres database.  This index will cover all text columns in the table, allowing a single searchbox to 
+match against all the text the table contains.
 
-To obtain the table definition, use the `\d` psql meta-command.  For example, if your table is named `users`, this
-will print out its definition:
-```bash
-psql -c '\d users'
-```
+From the src folder run `PG_SB_TABLE_NAME=table_name yarn run script:create-index`
+You should replace `table_name` with your table name.
 
-Because `mk-idx.mjs` takes this definition on its standard input, you can pipe the `psql` output to it, like this:
-```bash
-psql -c '\d users' | node mk-idx.mjs
-```
+When executed, this script will create a new column in your table that serves as a text-search target, plus an index 
+that significantly speeds up matching queries against this new column.  Executing this script will likely take a 
+while, depending on the size and nature of your data.  Postgres will automatically update the index every time you 
+modify your data; as soon as a database modification completes, the new content will be searchable.
 
-This prints out some SQL that you can paste into `psql`.  When executed, this SQL will create a new column in your
-table that serves as a text-search target, plus an index that significantly speeds up matching queries against this
-new column.  Executing this SQL will likely take a while, depending on the size and nature of your data.  Postgres
-will automatically update the index every time you modify your data; as soon as a database modification completes,
-the new content will be searchable.
+IMPORTANT: For the Postgres connection to work, you must set the values of some [environment
+variables](https://www.postgresql.org/docs/current/libpq-envars.html), so the handler can find the right Postgres
+host, database, user, and password. At a minimum the following should be set
+
+- PGHOST
+- PGUSER
+- PGPASSWORD
+- PGDATABASE
 
 ## Set up a Search API Route
 
@@ -93,9 +92,7 @@ export default handlerNextJS
 
 Note that the relative URL of this page is `api/search`, which is what we'll use in the next step.
 
-IMPORTANT: For the Postgres connection to work, you must set the values of some [environment
-variables](https://www.postgresql.org/docs/current/libpq-envars.html), so the handler can find the right Postgres
-host, database, user, and password.
+IMPORTANT: The above note about environment variables applies here too.
 
 ## Implement a Search Page
 
@@ -122,3 +119,32 @@ developer.
 It's also worth mentioning that `postgres-searchbox` currently requires a precise match for diacritics (accents on
 non-ASCII letters).  This will be remedied in the future by using the
 [`unaccent`](https://www.postgresql.org/docs/current/unaccent.html) dictionary.
+
+# Contributing
+
+A config for VSCode dev containers and docker-compose file are included for developer convenience, but they don't have to be used.
+
+Getting started with VSCode
+- Open the project in VSCode. 
+- In command pallet: `Dev Containers: Reopen in Container`
+- `yarn install`
+- `yarnrun  test:watch`
+
+Getting started with Docker Compose
+- Run `docker-compose up` from project root
+- In a new terminal, get bash access to the container with `docker-compose exec bash` 
+- `/home/default/src`
+- `yarn install`
+- `yarnrun  test:watch`
+- Stop with ``docker-compose stop`
+
+Getting started without docker
+- Start up a Postgres instance for testing
+- Cd to this project `/src`
+- `yarn install`
+- The test scripts expect the following environment variables
+  - PGHOST
+  - PGUSER
+  - PGPASSWORD
+  - PGDATABASE
+- `yarn run test:watch`
