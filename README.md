@@ -128,14 +128,14 @@ Getting started with VSCode
 - Open the project in VSCode. 
 - In command pallet: `Dev Containers: Reopen in Container`
 - `yarn install`
-- `yarnrun  test:watch`
+- `yarn run test:watch`
 
 Getting started with Docker Compose
 - Run `docker-compose up` from project root
 - In a new terminal, get bash access to the container with `docker-compose exec bash` 
 - `/home/default/src`
 - `yarn install`
-- `yarnrun  test:watch`
+- `yarn run test:watch`
 - Stop with ``docker-compose stop`
 
 Getting started without docker
