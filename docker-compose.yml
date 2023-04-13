@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+
+  postgres-searchbox:
+    image: node:18-bullseye-slim
+    entrypoint: [ '/bin/bash' ]
+    tty: true
+    stdin_open: true
+    ports:
+      - 3000:3000
+    volumes:
+      - ./src:/home/default/src
+    environment:
+      # For [pg package](https://node-postgres.com/features/connecting#environment-variables)
+      - PGHOST=postgres
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=postgres
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - data:/var/lib/postgresql/data
+
+volumes:
+  data: {}

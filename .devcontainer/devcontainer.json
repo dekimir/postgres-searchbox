@@ -1,0 +1,17 @@
+// For format details, see https://aka.ms/devcontainer.json.
+{
+    "name": "postgres-searchbox",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "postgres-searchbox",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "GitHub.copilot",
+                "qufiwefefwoyn.inline-sql-syntax"
+            ]
+        }
+    },
+    "workspaceFolder": "/home/default/src"
+    // Use 'forwardPorts' to make a list of ports inside the container available locally.
+    // "forwardPorts": [],
+}
