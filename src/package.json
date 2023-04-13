@@ -1,6 +1,6 @@
 {
   "name": "postgres-searchbox",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Enables react-instantsearch to work directly on PostgreSQL tables",
   "type": "module",
   "exports": {
