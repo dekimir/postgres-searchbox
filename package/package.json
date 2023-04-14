@@ -17,6 +17,7 @@
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "build:watch": "tsc --project tsconfig.build.json --watch",
+    "build:watch-swc": "swc src -w --out-dir build",
     "script:create-index": "PG_SB_CREATE_COL_AND_INDEX=true ts-node-esm scripts/create-index.ts",
     "script:drop-index": "PG_SB_DROP_COL_AND_INDEX=true ts-node-esm scripts/create-index.ts",
     "script:create-movies": "PG_SB_CREATE_MOVIES=true ts-node-esm ./scripts/create-movies.ts",
@@ -48,7 +49,9 @@
     "url": "https://github.com/dekimir/postgres-searchbox/issues"
   },
   "homepage": "https://github.com/dekimir/postgres-searchbox#readme",
-  "dependencies": {},
+  "dependencies": {
+    "pg-native": "file:./modules/pg-native"
+  },
   "devDependencies": {
     "@faker-js/faker": "^7.6.0",
     "@swc/cli": "^0.1.62",
@@ -60,6 +63,7 @@
     "@types/pg": "^8.6.6",
     "@types/pg-copy-streams": "^1.2.2",
     "@types/pg-format": "^1.0.2",
+    "chokidar": "^3.5.3",
     "express": "^4.18.2",
     "jest": "^29.5.0",
     "jest-mock": "^29.5.0",

@@ -53,12 +53,14 @@ Here is how you can make your Postgres data searchable in three easy steps:
 
 ## Create a Search Index for Your Postgres Table
 
+Install the package and peer dependencies to your project with `yarn add postgres-searchbox pg pg-format zod`.
+
 `postgres-searchbox` includes a script that can generate the SQL commands for creating a search index on the table
 you want to search. The script is at `scripts/create-index.js`; it reads the table definition and creates a search
 index in thePostgres database. This index will cover all text columns in the table, allowing a single searchbox to
 match against all the text the table contains.
 
-From the src folder run `PG_SB_TABLE_NAME=table_name yarn run script:create-index`
+From the `postgres-searchbox/package` folder run `PG_SB_TABLE_NAME=table_name yarn script:create-index`
 You should replace `table_name` with your table name.
 
 When executed, this script will create a new column in your table that serves as a text-search target, plus an index
@@ -122,48 +124,67 @@ non-ASCII letters). This will be remedied in the future by using the
 
 # Contributing
 
+## Starting with tests
+
 A config for VSCode dev containers and docker-compose file are included for developer convenience, but they don't have to be used.
 
 Getting started with VSCode
 
 - Open the project in VSCode.
 - In command pallet: `Dev Containers: Reopen in Container`
+- `cd package`
 - `yarn install`
-- `yarn run test:watch`
+- `yarn test:watch`
 
 Getting started with Docker Compose
 
 - Run `docker-compose up` from project root
 - In a new terminal, get bash access to the container with `docker-compose exec bash`
-- `/home/default/src`
+- `/home/default/package`
 - `yarn install`
-- `yarn run test:watch`
+- `yarn test:watch`
 - Stop with ``docker-compose stop`
 
 Getting started without docker
 
 - Start up a Postgres instance for testing
-- Cd to this project `/src`
+- Go to this project `cd package`
 - `yarn install`
 - The test scripts expect the following environment variables
   - PGHOST
   - PGUSER
   - PGPASSWORD
   - PGDATABASE
-- `yarn run test:watch`
+- `yarn test:watch`
 
-# Todo
+## Realworld data
 
-New way to publish
+To work with a dataset of 10M rows. You can import https://datasets.imdbws.com/title.basics.tsv.gz from imdb.
+A helper script to create a table, download, insert, and index the data is at `packages/scripts/create-movies.ts`.
+To run this script `yarn install` and `yarn run script:create-movies` this could take 5-10 minutes.
 
-`yarn build && npm publish`
+## Local development with example(s)
 
-New way to install
+During development it may be useful to see postgres-searchbar in context of a website.
+In the folder `examples/with-nextjs` is a default React (nNextJS) install with
+postgres-searchbar installed. See the 3 files:
 
-`yarn add postgres-searchbox-de-fork pg pg-format zod`
+- `examples/with-nextjs/pages/api/search.ts`
+- `examples/with-nextjs/pages/movies.tsx`
+- `examples/with-nextjs/styles/Movies.module.css`
 
-To keep package size down and let the dev use versions that they already have.
+In `examples/with-nextjs` you can `yarn && yarn dev` to get the dev. server running.
+You can see the movies page at http://locaalhost:3000/movies
 
-Explain about TS
+NextJS can import the `package/build/*.js` files, to keep them up to date run `yarn build:watch-swc` from a 2nd treminal.
 
-Why swc and tsc?
+Using swc here is orders of magnitude faster than tsc. The downside is that it doesn't check for type correctnes.
+
+## Publishing to npm
+
+As the project source is written in Typescript it's necessary to compile before publishing to npm
+
+- Ensure al tests are passing with `yarn test`
+- `yarn build` this will use `tsc` to output to `package/build`. It check type correctness and fail on any Typescript errors.
+- Update the version number in `package.json`
+- `npm publish`
