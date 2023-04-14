@@ -1,24 +1,26 @@
 import pkg from 'pg';
 const { Client } = pkg;
-import format from 'pg-format'
+import format from 'pg-format';
 import { faker } from '@faker-js/faker';
-
 
 function createRandomProduct() {
   return [
     faker.commerce.productName(),
     faker.commerce.productDescription(),
-    faker.commerce.price(10, 20000, 0)
+    faker.commerce.price(10, 20000, 0),
   ];
 }
 
 export async function initTestDatabase({ tableName, rowCount, fakerSeed }) {
-  const client = new Client()
-  client.connect()
+  const client = new Client();
+  client.connect();
   // Create test able if it doesn't exist.
-  const sql = format('CREATE TABLE IF NOT EXISTS %I (id SERIAL PRIMARY KEY, name text, description text, price int4)', tableName);
+  const sql = format(
+    'CREATE TABLE IF NOT EXISTS %I (id SERIAL PRIMARY KEY, name text, description text, price int4)',
+    tableName
+  );
   // run the sql
-  await client.query(sql)
+  await client.query(sql);
   // Set deed so that values are always the same
   if (fakerSeed) {
     faker.seed(123);
@@ -32,9 +34,13 @@ export async function initTestDatabase({ tableName, rowCount, fakerSeed }) {
   }
 
   // Insert test data into test table
-  const insertSql = format('INSERT INTO %I (name, description, price) VALUES %L', tableName, values);
+  const insertSql = format(
+    'INSERT INTO %I (name, description, price) VALUES %L',
+    tableName,
+    values
+  );
   // Run the insert sql
-  await client.query(insertSql)
+  await client.query(insertSql);
   // Disconnect client
   await client.end();
 }
