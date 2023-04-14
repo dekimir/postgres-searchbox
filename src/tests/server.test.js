@@ -4,7 +4,7 @@ const { Client } = pkg;
 import format from 'pg-format'
 
 // Scripts
-import { initTestDatabase } from './_init-test-database.js';
+import { initTestDatabase } from '../scripts/mock-data.js';
 import { getTextColumnsFromTable, createColumnAndIndex, dropColumnAndIndex } from '../scripts/create-index.js';
 // Main functions
 import { handlerNextJS } from '../index.js';
@@ -12,7 +12,7 @@ import { handlerNextJS } from '../index.js';
 describe('initTestDatabase', () => {
 
     const tableName = 'test_table';
-    const initTestDatabaseParams = { tableName, rowCount: 100 };
+    const initTestDatabaseParams = { tableName, rowCount: 100, fakerSeed: 123 };
 
     const client = new Client()
     client.connect()

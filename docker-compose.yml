@@ -10,6 +10,7 @@ services:
       - 3000:3000
     volumes:
       - ./src:/home/default/src
+      - ./examples:/home/default/examples
     environment:
       # For [pg package](https://node-postgres.com/features/connecting#environment-variables)
       - PGHOST=postgres
