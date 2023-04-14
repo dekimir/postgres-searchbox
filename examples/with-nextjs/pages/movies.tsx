@@ -9,7 +9,14 @@ import {
   Hits,
   Pagination,
 } from 'react-instantsearch-hooks-web';
-import { make_client } from '../../../src/client';
+
+// During postgres-searchbar development this can be one of the following:
+// import { make_client } from '../../../package/src/client';
+// import { make_client } from '../../../package/build/client';
+
+// Otherwize you should use:
+// import { make_client } from 'postgres-searchbox/client';
+import { make_client } from 'postgres-searchbox-de-fork/client';
 
 const inter = Inter({ subsets: ['latin'] });
 

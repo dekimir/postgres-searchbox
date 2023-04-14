@@ -15,9 +15,13 @@
     "eslint": "8.38.0",
     "eslint-config-next": "13.3.0",
     "next": "13.3.0",
+    "pg": "^8.10.0",
+    "pg-format": "^1.0.4",
+    "postgres-searchbox-de-fork": "^1.0.20",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-instantsearch-hooks-web": "^6.42.2",
-    "typescript": "5.0.4"
+    "typescript": "5.0.4",
+    "zod": "^3.21.4"
   }
 }
