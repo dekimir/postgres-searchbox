@@ -10,7 +10,7 @@ services:
       - 3000:3000
     volumes:
       - ./.vscode:/home/default/.vscode
-      - ./src:/home/default/src
+      - ./package:/home/default/package
       - ./examples:/home/default/examples
     environment:
       # For [pg package](https://node-postgres.com/features/connecting#environment-variables)

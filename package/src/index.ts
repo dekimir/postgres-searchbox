@@ -1,69 +1,52 @@
 import pkg from 'pg';
 const { Client } = pkg;
 import format from 'pg-format';
-import { z } from 'zod';
 // Constants
+import { MAX_HITS_TOTAL, VECTOR_COLUMN } from './constants.js';
+// Types and validation
 import {
-  MAX_HITS_PER_PAGE,
-  MAX_PAGES,
-  MAX_HITS_TOTAL,
-  VECTOR_COLUMN,
-} from './constants.js';
+  GenericReq,
+  GenericRes,
+  Json,
+  DatabaseResult,
+  PaginationRes,
+  SearchRes,
+} from './index.types.js';
 
 const client = new Client();
 client.connect();
 
 /**
- * Input validation with zod
- */
-
-const SearchParams = z.object({
-  query: z.string(),
-  // Optional pagination params
-  page: z.number().gte(0).lte(MAX_PAGES).optional(),
-  hitsPerPage: z.number().gte(1).lte(MAX_HITS_PER_PAGE).optional(),
-  // Unused params
-  facets: z.array(z.string()).optional(),
-  highlightPostTag: z.string().optional(),
-  highlightPreTag: z.string().optional(),
-  tagFilters: z.string().optional(),
-});
-
-const Json = z.object({
-  params: SearchParams,
-  indexName: z.string(),
-});
-
-/**
  * Search handler
  */
 
-export async function searchHandler(req, res) {
+export async function searchHandler(req: GenericReq, res: GenericRes) {
   const json = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
 
-  const { success, data } = Json.safeParse(json);
+  const parsed = Json.safeParse(json);
 
-  if (!success) {
+  if (!parsed.success) {
     res.status(400).json({ error: 'Request contained an invalid payload' });
     return;
   }
 
-  const { indexName: table, params } = data;
+  const { indexName: table, params } = parsed.data;
   const { query } = params;
 
   /**
-   * Pafination
+   * Pagination
    */
 
-  const paginationResponse = {
+  // TODO Retrieving a subset of records (with offset and length)
+  // https://www.algolia.com/doc/guides/building-search-ui/ui-and-ux-patterns/pagination/react-hooks/#retrieving-a-subset-of-records-with-offset-and-length
+  const initPaginationRes: Pick<PaginationRes, 'page' | 'hitsPerPage'> = {
     page: params.page || 0,
     hitsPerPage: params.hitsPerPage || 20,
-    // This will be mutated later
   };
 
   const paginationParams = {
-    offset: paginationResponse.page * paginationResponse.hitsPerPage,
-    limit: paginationResponse.hitsPerPage,
+    offset: initPaginationRes.page * initPaginationRes.hitsPerPage,
+    limit: initPaginationRes.hitsPerPage,
   };
 
   if (paginationParams.offset + paginationParams.limit > MAX_HITS_TOTAL) {
@@ -101,14 +84,17 @@ export async function searchHandler(req, res) {
     paginationParams.limit
   );
 
-  const result = await client.query(sql);
+  const result: DatabaseResult = await client.query(sql);
 
-  paginationResponse.nbHits = result.rows[0]?.total_hits;
-  paginationResponse.nbPages = Math.ceil(
-    result.rows[0].total_hits / paginationResponse.hitsPerPage
-  );
+  const paginationRes: PaginationRes = {
+    ...initPaginationRes,
+    nbHits: result.rows[0]?.total_hits,
+    nbPages: Math.ceil(
+      result.rows[0].total_hits / initPaginationRes.hitsPerPage
+    ),
+  };
 
-  res.status(200).json({
+  const searchRes: SearchRes = {
     results: [
       {
         // Remove the vector column here because there is no easy way to do
@@ -122,11 +108,13 @@ export async function searchHandler(req, res) {
               Object.entries(row).filter(([key]) => key !== VECTOR_COLUMN)
             )
           ) || [],
-        ...paginationResponse,
+        ...paginationRes,
       },
     ],
     query,
-  });
+  };
+
+  res.status(200).json(searchRes);
 }
 
 export * from './client.js';

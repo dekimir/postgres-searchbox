@@ -1,0 +1,23 @@
+{
+  // .swcrc should be treated as JSONC
+  "$schema": "https://json.schemastore.org/swcrc",
+  "minify": true,
+  "jsc": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "@scripts/*": [
+        "scripts/*"
+      ]
+    },
+    "parser": {
+      "syntax": "typescript"
+    },
+    "target": "es2022"
+  },
+  "module": {
+    "type": "es6"
+  }
+}

@@ -1,0 +1,10 @@
+*.tsv
+*.csv
+.env
+*.env
+.env.*
+*.env.*
+jest.*
+node_modules
+coverage
+test

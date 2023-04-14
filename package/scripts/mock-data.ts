@@ -11,7 +11,15 @@ function createRandomProduct() {
   ];
 }
 
-export async function initTestDatabase({ tableName, rowCount, fakerSeed }) {
+export async function initTestDatabase({
+  tableName,
+  rowCount,
+  fakerSeed,
+}: {
+  tableName: string;
+  rowCount: number;
+  fakerSeed?: number;
+}) {
   const client = new Client();
   client.connect();
   // Create test able if it doesn't exist.

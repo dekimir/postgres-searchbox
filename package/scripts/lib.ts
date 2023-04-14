@@ -29,7 +29,7 @@ export const canConnectToDatabase = async () => {
   }
 };
 
-export const tableExists = async ({ tableName }) => {
+export const doesTableExist = async ({ tableName }: { tableName: string }) => {
   const client = new Client();
   client.connect();
   const sql = format(
@@ -47,7 +47,11 @@ export const tableExists = async ({ tableName }) => {
   }
 };
 
-export const readyToCreateOrDrop = async ({ tableName }) => {
+export const readyToCreateOrDrop = async ({
+  tableName,
+}: {
+  tableName: string;
+}) => {
   if (!tableName?.length) {
     throw Error(
       `Did you forget to set PG_SB_TABLE_NAME?. Try running:
@@ -60,7 +64,7 @@ export const readyToCreateOrDrop = async ({ tableName }) => {
   // Run both checks in parallel
   const [canConnect, tableExists] = await Promise.all([
     canConnectToDatabase(),
-    tableExists({ tableName }),
+    doesTableExist({ tableName }),
   ]);
 
   if (!canConnect) {
@@ -80,7 +84,11 @@ export const readyToCreateOrDrop = async ({ tableName }) => {
  * Get text columns from a table
  */
 
-export async function getTextColumnsFromTable({ tableName }) {
+export async function getTextColumnsFromTable({
+  tableName,
+}: {
+  tableName: string;
+}) {
   const client = new Client();
   client.connect();
   const sql = format(
@@ -94,10 +102,26 @@ export async function getTextColumnsFromTable({ tableName }) {
 }
 
 /**
+ * Check a file or directory exists
+ */
+
+export const fileOrDirExists = async (target: string) => {
+  let exists = true;
+  await fsPromises.access(target).catch((e) => {
+    exists = !e;
+  });
+  return exists;
+};
+
+/**
  * Download a file with auto decompression
  */
 
-export const downloadFile = async (source, target, { skipIfExists } = {}) => {
+export const downloadFile = async (
+  source: string,
+  target: string,
+  { skipIfExists }: { skipIfExists?: boolean } = {}
+) => {
   if (skipIfExists && (await fileOrDirExists(target))) {
     return console.log('file exists');
   }

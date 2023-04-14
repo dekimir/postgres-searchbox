@@ -1,12 +1,11 @@
-import jest from 'jest-mock';
 import pkg from 'pg';
 const { Client } = pkg;
 import format from 'pg-format';
 // Scripts
-import { initTestDatabase } from '../scripts/mock-data.js';
-import { createColumnAndIndex } from '../scripts/create-index.js';
+import { initTestDatabase } from '@scripts/mock-data.js';
+import { createColumnAndIndex } from '@scripts/create-index.js';
 // Main functions
-import { searchHandler } from '../index.js';
+import { searchHandler } from '@/index.js';
 
 /**
  * This file is for testing the server side functions

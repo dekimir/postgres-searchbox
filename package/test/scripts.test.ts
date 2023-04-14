@@ -2,14 +2,14 @@ import pkg from 'pg';
 const { Client } = pkg;
 import format from 'pg-format';
 // Constants
-import { VECTOR_COLUMN, INDEX_PREFIX } from '../constants.js';
+import { VECTOR_COLUMN, INDEX_PREFIX } from '@/constants.js';
 // Scripts
-import { getTextColumnsFromTable } from '../scripts/lib.js';
-import { initTestDatabase } from '../scripts/mock-data.js';
+import { getTextColumnsFromTable } from '@scripts/lib.js';
+import { initTestDatabase } from '@scripts/mock-data.js';
 import {
   createColumnAndIndex,
   dropColumnAndIndex,
-} from '../scripts/create-index.js';
+} from '@scripts/create-index.js';
 
 /**
  * This file is just for testing the functions in the scripts folder
