@@ -1,64 +1,15 @@
-// node
-import https from 'node:https';
-import fs from 'node:fs';
-import path from 'node:path';
-import fsPromises from 'node:fs/promises';
-import readline from 'node:readline';
-import { pipeline } from 'node:stream/promises';
-import zlib from 'node:zlib';
 // npm
 import pkg from 'pg';
 import { from as copyFrom } from 'pg-copy-streams';
 const { Client } = pkg;
 import format from 'pg-format';
-// Local
+// Relative
 import {
   canConnectToDatabase,
   tableExists,
   createColumnAndIndex,
-} from './create-index.js';
-import { initTestDatabase } from './mock-data.js';
-import { query } from 'express';
-
-export const downloadFile = async (source, target, { skipIfExists } = {}) => {
-  if (skipIfExists && (await fileOrDirExists(target))) {
-    return console.log('file exists');
-  }
-
-  const incompleteTarget = `${target}-incomplete`;
-
-  const output = fs.createWriteStream(incompleteTarget);
-
-  const request = https.get(source, {
-    headers: { 'Accept-Encoding': 'gzip,deflate' },
-  });
-
-  const promise = new Promise((resolve) => {
-    request.on('response', async (response) => {
-      let midStream = undefined;
-
-      if (
-        source.endsWith('.gz') ||
-        response.headers['content-encoding'] === 'gzip' ||
-        'application/gzip' === response.headers['content-type']
-      ) {
-        midStream = zlib.createGunzip();
-      } else if (response.headers['content-encoding'] === 'br') {
-        midStream = zlib.createBrotliDecompress();
-      } else if (response.headers['content-encoding'] === 'deflate') {
-        midStream = zlib.createInflate();
-      }
-
-      await pipeline([response, ...(midStream ? [midStream] : []), output]);
-
-      await fsPromises.rename(incompleteTarget, target);
-
-      return resolve('');
-    });
-  });
-
-  return promise;
-};
+  downloadFile,
+} from './lib.js';
 
 /**
  * Create a table with tableName
@@ -135,7 +86,7 @@ export async function importData({ tableName }) {
 
   // copy data from temp table to target table
   const copySql = format(
-    `
+    /* sql */ `
         INSERT INTO %I 
         SELECT 
             tconst,

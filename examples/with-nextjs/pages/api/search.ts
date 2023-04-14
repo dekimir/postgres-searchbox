@@ -1,3 +1,3 @@
-import { handlerNextJS } from '../../../src'
+import { searchHandler } from '../../../../src';
 
-export default handlerNextJS
+export default searchHandler;

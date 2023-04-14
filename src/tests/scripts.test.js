@@ -1,19 +1,21 @@
-import jest from 'jest-mock';
 import pkg from 'pg';
 const { Client } = pkg;
 import format from 'pg-format';
-
+// Constants
+import { VECTOR_COLUMN, INDEX_PREFIX } from '../constants.js';
 // Scripts
+import { getTextColumnsFromTable } from '../scripts/lib.js';
 import { initTestDatabase } from '../scripts/mock-data.js';
 import {
-  getTextColumnsFromTable,
   createColumnAndIndex,
   dropColumnAndIndex,
 } from '../scripts/create-index.js';
-// Main functions
-import { handlerNextJS } from '../index.js';
 
-describe('initTestDatabase', () => {
+/**
+ * This file is just for testing the functions in the scripts folder
+ */
+
+describe('scripts', () => {
   const tableName = 'test_table';
   const initTestDatabaseParams = { tableName, rowCount: 100, fakerSeed: 123 };
 
@@ -31,6 +33,12 @@ describe('initTestDatabase', () => {
     await client.query(dropSql);
     await client.end();
   });
+
+  /**
+   * TODO:
+   * Test all of the scripts/lib functions
+   * Test the create-movies script
+   */
 
   /**
    * Test that the test table is created and populated with 100 rows
@@ -74,15 +82,15 @@ describe('initTestDatabase', () => {
     // Test the vector column exists
     const columnSql = format('SELECT * FROM %I', tableName);
     const data = await client.query(columnSql);
-    expect(data.rows[0].postgres_searchbox_v1_doc).toBeDefined();
+    expect(data.rows[0][VECTOR_COLUMN]).toBeDefined();
     // Test that the column has a tsvector value
-    // expect(data.rows[0].postgres_searchbox_v1_doc).toBe("'coalesc':1,3 'descript':4 'name':2");
+    // expect(data.rows[0][VECTOR_COLUMN]).toBe("'coalesc':1,3 'descript':4 'name':2");
 
     // Test the index exists
     const indexSql = format(
       'SELECT * FROM pg_indexes WHERE tablename = %L AND indexname = %L',
       tableName,
-      'postgres_searchbox_v1_idx_test_table'
+      `${INDEX_PREFIX}${tableName}`
     );
     const indexData = await client.query(indexSql);
     expect(indexData.rows.length).toBe(1);
@@ -102,54 +110,15 @@ describe('initTestDatabase', () => {
     // Test the vector column does not exist
     const columnSql = format('SELECT * FROM %I', tableName);
     const data = await client.query(columnSql);
-    expect(data.rows[0].postgres_searchbox_v1_doc).toBeUndefined();
+    expect(data.rows[0][VECTOR_COLUMN]).toBeUndefined();
 
     // Test the index does not exist
     const indexSql = format(
       'SELECT * FROM pg_indexes WHERE tablename = %L AND indexname = %L',
       tableName,
-      'postgres_searchbox_v1_idx_test_table'
+      `${INDEX_PREFIX}${tableName}`
     );
     const indexData = await client.query(indexSql);
     expect(indexData.rows.length).toBe(0);
-  });
-
-  /**
-   * Test handler returns results
-   */
-
-  it('should return results', async () => {
-    // Prerequisites
-    await initTestDatabase(initTestDatabaseParams);
-    await createColumnAndIndex({ tableName });
-
-    const query = 'goalkeeper shirt';
-
-    const req = {
-      body: JSON.stringify({ params: { query }, indexName: tableName }),
-    };
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-    };
-    await handlerNextJS(req, res);
-
-    // Test status and json are called
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({
-      query,
-      results: [{ hits: expect.any(Array) }],
-    });
-
-    const expected = {
-      id: 15,
-      name: 'Shirt',
-      description:
-        'Carbonite web goalkeeper gloves are ergonomically designed to give easy fit',
-      postgres_searchbox_v1_doc:
-        "'carbonit':2 'design':8 'easi':11 'ergonom':7 'fit':12 'give':10 'glove':5 'goalkeep':4 'shirt':1 'web':3",
-    };
-    // Test hits contained expected object
-    expect(res.json.mock.calls[0][0].results[0].hits).toContainEqual(expected);
   });
 });

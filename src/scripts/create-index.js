@@ -1,71 +1,20 @@
 import pkg from 'pg';
 const { Client } = pkg;
 import format from 'pg-format';
-
-/**
- * Helper functions so we can return meaningful error messages
- */
-
-export const canConnectToDatabase = async () => {
-  const client = new Client();
-  client.connect();
-  const sql = format('SELECT 1');
-
-  try {
-    const results = await client.query(sql);
-    if (!results.rows.length) return false;
-    return true;
-  } catch (error) {
-    return false;
-  } finally {
-    client.end();
-  }
-};
-
-export const tableExists = async ({ tableName }) => {
-  const client = new Client();
-  client.connect();
-  const sql = format(
-    'SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = %L)',
-    tableName
-  );
-  try {
-    const results = await client.query(sql);
-    if (!results.rows.length) return false;
-    return true;
-  } catch (error) {
-    return false;
-  } finally {
-    client.end();
-  }
-};
-
-/**
- * Get text columns from a table
- */
-
-export async function getTextColumnsFromTable({ tableName }) {
-  const client = new Client();
-  client.connect();
-  const sql = format(
-    'SELECT column_name FROM information_schema.columns WHERE table_name = %L AND data_type = %L',
-    tableName,
-    'text'
-  );
-  const data = await client.query(sql);
-  client.end();
-  return data.rows.map((row) => row.column_name);
-}
+// Relative
+import { readyToCreateOrDrop, getTextColumnsFromTable } from './lib.js';
+// Constants
+import { VECTOR_COLUMN, INDEX_PREFIX } from '../constants.js';
 
 /**
  * Create the vector column and index
  */
 
 export async function createColumnAndIndex({ tableName }) {
+  const indexName = `${INDEX_PREFIX}${tableName}`;
+
   // Constants, these could be passed in as params in future
-  const vectorColumnName = 'postgres_searchbox_v1_doc';
   const tsVectorLanguage = 'english';
-  const indexName = `postgres_searchbox_v1_idx_${tableName}`;
 
   const client = new Client();
   client.connect();
@@ -79,7 +28,7 @@ export async function createColumnAndIndex({ tableName }) {
   const columnSql = format(
     `ALTER TABLE %I ADD COLUMN %I tsvector GENERATED ALWAYS AS (to_tsvector(%L, %s)) STORED;`,
     tableName,
-    vectorColumnName,
+    VECTOR_COLUMN,
     tsVectorLanguage,
     valExpr
   );
@@ -89,7 +38,7 @@ export async function createColumnAndIndex({ tableName }) {
     `CREATE INDEX %I ON %I USING GIN(%I);`,
     indexName,
     tableName,
-    vectorColumnName
+    VECTOR_COLUMN
   );
   await client.query(indexSql);
 
@@ -101,10 +50,7 @@ export async function createColumnAndIndex({ tableName }) {
  */
 
 export async function dropColumnAndIndex({ tableName }) {
-  // Constants, these could be passed in as params in future
-
-  const vectorColumnName = 'postgres_searchbox_v1_doc';
-  const indexName = `postgres_searchbox_v1_idx_${tableName}`;
+  const indexName = `${INDEX_PREFIX}${tableName}`;
 
   const client = new Client();
   client.connect();
@@ -115,7 +61,7 @@ export async function dropColumnAndIndex({ tableName }) {
   const columnSql = format(
     `ALTER TABLE %I DROP COLUMN %I;`,
     tableName,
-    vectorColumnName
+    VECTOR_COLUMN
   );
   await client.query(columnSql);
 
@@ -126,31 +72,17 @@ export async function dropColumnAndIndex({ tableName }) {
  * Run the script when called from package.json
  */
 
-if (process.env.PG_SB_CREATE_INDEX === 'true') {
-  if (!process.env.PG_SB_TABLE_NAME?.length) {
-    throw Error(
-      'Did you dorget to set PG_SB_TABLE_NAME?. Try running `PG_SB_TABLE_NAME=table_name yarn run script:make-index`'
-    );
-  }
-  if (!(await canConnectToDatabase()))
-    throw Error('Could not connect to database');
-  if (!(await tableExists({ tableName: process.env.PG_SB_TABLE_NAME })))
-    throw Error('Table does not exist');
+if (process.env.PG_SB_CREATE_COL_AND_INDEX === 'true') {
+  // Check db and table exist - throws if not
+  await readyToCreateOrDrop({ tableName: process.env.PG_SB_TABLE_NAME });
   // Can connect to db and table exists, so create index
   await createColumnAndIndex({ tableName: process.env.PG_SB_TABLE_NAME });
   console.log('Created column and index successfully');
 }
 
-if (process.env.PG_SB_DROP_INDEX === 'true') {
-  if (!process.env.PG_SB_TABLE_NAME?.length) {
-    throw Error(
-      'Did you dorget to set PG_SB_TABLE_NAME?. Try running `PG_SB_TABLE_NAME=table_name yarn run script:drop-index`'
-    );
-  }
-  if (!(await canConnectToDatabase()))
-    throw Error('Could not connect to database');
-  if (!(await tableExists({ tableName: process.env.PG_SB_TABLE_NAME })))
-    throw Error('Table does not exist');
+if (process.env.PG_SB_DROP_COL_AND_INDEX === 'true') {
+  // Check db and table exist - throws if not
+  await readyToCreateOrDrop({ tableName: process.env.PG_SB_TABLE_NAME });
   // Can connect to db and table exists, so create index
   await dropColumnAndIndex({ tableName: process.env.PG_SB_TABLE_NAME });
   console.log('Dropped column and index successfully');
