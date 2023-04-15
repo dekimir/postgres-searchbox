@@ -161,7 +161,7 @@ Getting started without docker
 
 To work with a dataset of 10M rows. You can import https://datasets.imdbws.com/title.basics.tsv.gz from imdb.
 A helper script to create a table, download, insert, and index the data is at `packages/scripts/create-movies.ts`.
-To run this script `yarn install` and `yarn run script:create-movies` this could take 5-10 minutes.
+To run this script `yarn install` and `yarn script:create-movies` this could take 5-10 minutes.
 
 ## Local development with example(s)
 
