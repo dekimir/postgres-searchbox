@@ -14,6 +14,7 @@ import { Json } from './index.validation.js';
 // Lib
 import { getPagination } from './lib/pagination.js';
 import { getTableAndSort } from './lib/sort.js';
+import { getHighlight } from './lib/highlight.js';
 
 const client = new Client();
 client.connect();
@@ -33,13 +34,18 @@ export async function searchHandler(req: GenericReq, res: GenericRes) {
     return;
   }
 
-  const { indexName, params } = parsed.data;
+  const { indexName, params, pgOptions } = parsed.data;
   const { query } = params;
 
   // Parse index name to get table and sort
   const { table, formatedSort } = getTableAndSort(indexName);
   // Pagination
   const pagination = getPagination(params);
+  // Higlight
+  const highlight = getHighlight({
+    params,
+    highlightColumns: pgOptions?.highlightColumns,
+  });
 
   if (pagination.db.offset + pagination.db.limit > MAX_HITS_TOTAL) {
     res.status(400).json({ error: 'Pagination parameters exceed maximum' });
@@ -53,7 +59,9 @@ export async function searchHandler(req: GenericReq, res: GenericRes) {
       FROM %I
       WHERE %I @@ websearch_to_tsquery(%L)
     ), query AS (
-      SELECT *
+      SELECT 
+        *
+        ${highlight?.db.formatted ? `, ${highlight?.db.formatted}` : ``}
       FROM %I 
       WHERE %I @@ websearch_to_tsquery(%L) 
       %s
@@ -69,11 +77,14 @@ export async function searchHandler(req: GenericReq, res: GenericRes) {
     table,
     VECTOR_COLUMN,
     query,
+    // For highlighted
     // For hits
     table,
     VECTOR_COLUMN,
     query,
+    // For sort
     formatedSort,
+    // For pagination
     pagination.db.offset,
     pagination.db.limit
   );
@@ -88,10 +99,13 @@ export async function searchHandler(req: GenericReq, res: GenericRes) {
         // The alternatives to this is  have the req contian the column names
         // to return and pass them to the database query.
         hits:
-          result.rows[0].hits?.map((row) =>
-            // return all properties except the vector column
+          result.rows[0].hits?.map((hit) =>
             Object.fromEntries(
-              Object.entries(row).filter(([key]) => key !== VECTOR_COLUMN)
+              // if higlight is enabled then update the hit
+              Object.entries(highlight?.updateHit(hit) || hit).filter(
+                // return all properties except the vector column
+                ([key]) => key !== VECTOR_COLUMN
+              )
             )
           ) || [],
         ...pagination.updateRes({

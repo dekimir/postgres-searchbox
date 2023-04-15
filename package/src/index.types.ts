@@ -23,12 +23,23 @@ export interface DatabaseResult {
   }[];
 }
 
+export type Hit = {
+  _highlightResult?: {
+    [key: string]: {
+      value: string;
+      matchLevel: 'none' | 'partial' | 'full';
+      matchedWords: string[];
+      fullyHighlighted?: boolean;
+    };
+  };
+} & {
+  [key: string]: string | number | boolean | null;
+};
+
 export interface SearchRes {
   results: [
     {
-      hits: {
-        [key: string]: string | number | boolean | null;
-      }[];
+      hits: Hit[];
     } & PaginationRes
   ];
   query: string;

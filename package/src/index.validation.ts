@@ -40,7 +40,15 @@ export const IndexName = z
   .min(1)
   .regex(new RegExp(/^[a-z0-9_\?\,\=\+]+$/));
 
+const PgOptions = z
+  .object({
+    // an array of columns
+    highlightColumns: z.array(z.string()).optional(),
+  })
+  .optional();
+
 export const Json = z.object({
   params: SearchParams.and(PaginationParams),
   indexName: IndexName,
+  pgOptions: PgOptions,
 });
