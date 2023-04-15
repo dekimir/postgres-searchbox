@@ -5,9 +5,24 @@ import styles from '@/styles/Home.module.css';
 
 import {
   InstantSearch,
-  SearchBox,
+  Breadcrumb,
+  Configure,
+  ClearRefinements,
+  CurrentRefinements,
+  DynamicWidgets,
+  HierarchicalMenu,
+  Highlight,
   Hits,
+  HitsPerPage,
+  InfiniteHits,
+  Menu,
   Pagination,
+  RangeInput,
+  RefinementList,
+  PoweredBy,
+  SearchBox,
+  SortBy,
+  ToggleRefinement,
 } from 'react-instantsearch-hooks-web';
 
 // During postgres-searchbar development this can be:
@@ -40,19 +55,53 @@ export default function Basic() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}>
-        <div>
-          <h1>Please enter your search terms here:</h1>
-          <InstantSearch
-            searchClient={client}
-            indexName="postgres_searchbox_movies"
-          >
-            <SearchBox />
-            <Hits hitComponent={Hit} />
-            <Pagination />
-          </InstantSearch>
+      <InstantSearch
+        searchClient={client}
+        indexName="postgres_searchbox_movies"
+      >
+        <div className="Container">
+          <div>Left column</div>
+          <div className="Search">
+            <SearchBox placeholder="Search" autoFocus />
+
+            <div className="Search-header">
+              <PoweredBy />
+              <HitsPerPage
+                items={[
+                  { label: '20 hits per page', value: 20, default: true },
+                  { label: '40 hits per page', value: 40 },
+                ]}
+              />
+              <SortBy
+                items={[
+                  { label: 'Relevance', value: 'postgres_searchbox_movies' },
+                  {
+                    label: 'Title (asc)',
+                    value: 'postgres_searchbox_movies?sort=primarytitle',
+                  },
+                  {
+                    label: 'Title (desc)',
+                    value: 'postgres_searchbox_movies?sort=primarytitle+desc',
+                  },
+                  {
+                    label: 'Start year (asc)',
+                    value: 'postgres_searchbox_movies?sort=startyear+asc',
+                  },
+                  {
+                    label: 'Start year (desc)',
+                    value:
+                      'postgres_searchbox_movies?sort=startyear+desc+nulls+last',
+                  },
+                ]}
+              />
+              {/* <Refresh /> */}
+            </div>
+
+            <InfiniteHits hitComponent={Hit} />
+            <Pagination className="Pagination" />
+          </div>
         </div>
-      </main>
+      </InstantSearch>
     </>
   );
 }

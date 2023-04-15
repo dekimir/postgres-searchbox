@@ -14,6 +14,7 @@
     "@types/react-dom": "18.0.11",
     "eslint": "8.38.0",
     "eslint-config-next": "13.3.0",
+    "instantsearch.css": "^8.0.0",
     "next": "13.3.0",
     "pg": "^8.10.0",
     "pg-format": "^1.0.4",
