@@ -1,6 +1,10 @@
+interface Query {
+  [key: string]: unknown;
+}
+
 export function make_client(searchApiUrl: string) {
   return {
-    search: async (queries: unknown[]) => {
+    search: async (queries: Query[]) => {
       const resp = await fetch(searchApiUrl, {
         method: 'POST',
         body: JSON.stringify(queries[0]),

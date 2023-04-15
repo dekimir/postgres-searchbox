@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">90% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>5/5</span>
+                <span class='fraction'>9/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>1/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">60% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>3/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>3/3</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
@@ -135,7 +135,9 @@
 <a name='L70'></a><a href='#L70'>70</a>
 <a name='L71'></a><a href='#L71'>71</a>
 <a name='L72'></a><a href='#L72'>72</a>
-<a name='L73'></a><a href='#L73'>73</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -144,19 +146,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -166,6 +156,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -209,18 +213,29 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { z } from 'zod';
 // Constants
-import { MAX_HITS_PER_PAGE, MAX_PAGES } from './constants.js';
+import { MAX_HITS_PER_PAGE, MAX_HITS_TOTAL, MAX_PAGES } from './constants.js';
 &nbsp;
 /**
  * Input validation with zod
  * Succesful validation returns a typed object
  */
 &nbsp;
-const SearchParams = z.object({
+export const PaginationParams<span class="fstat-no" title="function not covered" > = z</span>
+  .object({
+    // Optional pagination params
+    page: z.number().gte(0).lte(MAX_PAGES),
+    hitsPerPage: z.number().gte(1).lte(MAX_HITS_PER_PAGE),
+    // We should either have (page &amp; hitsPerPage) or (offset &amp; length)
+    offset: z.number().gte(0).lte(MAX_HITS_TOTAL),
+    length: z.number().gte(1).lte(MAX_HITS_PER_PAGE),
+  })
+  .partial()
+  .refine((data) =&gt; {
+    return typeof data.offset !== 'undefined' ? <span class="branch-0 cbranch-no" title="branch not covered" >!data.length </span>: true;
+  }, 'If offset is defined, length must be defined as well.');
+&nbsp;
+export const <span class="cstat-no" title="statement not covered" >SearchParams<span class="fstat-no" title="function not covered" > </span>= z</span>.object({
   query: z.string(),
-  // Optional pagination params
-  page: z.number().gte(0).lte(MAX_PAGES).optional(),
-  hitsPerPage: z.number().gte(1).lte(MAX_HITS_PER_PAGE).optional(),
   // Unused params
   facets: z.array(z.string()).optional(),
   highlightPostTag: z.string().optional(),
@@ -229,7 +244,7 @@ const SearchParams = z.object({
 });
 &nbsp;
 export const Json = z.object({
-  params: SearchParams,
+  params: SearchParams.and(PaginationParams),
   indexName: z.string(),
 });
 &nbsp;
@@ -260,15 +275,6 @@ export interface DatabaseResult {
   }[];
 }
 &nbsp;
-// https://www.algolia.com/doc/guides/building-search-ui/ui-and-ux-patterns/pagination/react-hooks/#response-details
-export interface PaginationRes {
-  page: number;
-  hitsPerPage: number;
-  nbHits: number;
-  nbPages: number;
-  exhaustiveNbHits?: boolean;
-}
-&nbsp;
 export interface SearchRes {
   results: [
     {
@@ -286,7 +292,7 @@ export interface SearchRes {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2023-04-14T17:26:28.929Z
+                at 2023-04-15T14:44:24.997Z
             </div>
         <script src="../prettify.js"></script>
         <script>

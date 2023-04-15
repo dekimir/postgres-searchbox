@@ -7,11 +7,13 @@ import { MAX_HITS_TOTAL, VECTOR_COLUMN } from './constants.js';
 import {
   GenericReq,
   GenericRes,
-  Json,
   DatabaseResult,
-  PaginationRes,
   SearchRes,
 } from './index.types.js';
+import { Json } from './index.validation.js';
+// Lib
+import { getPagination } from './lib/pagination.js';
+import { getTableAndSort } from './lib/sort.js';
 
 const client = new Client();
 client.connect();
@@ -26,30 +28,20 @@ export async function searchHandler(req: GenericReq, res: GenericRes) {
   const parsed = Json.safeParse(json);
 
   if (!parsed.success) {
+    console.error(parsed.error);
     res.status(400).json({ error: 'Request contained an invalid payload' });
     return;
   }
 
-  const { indexName: table, params } = parsed.data;
+  const { indexName, params } = parsed.data;
   const { query } = params;
 
-  /**
-   * Pagination
-   */
+  // Parse index name to get table and sort
+  const { table, formatedSort } = getTableAndSort(indexName);
+  // Pagination
+  const pagination = getPagination(params);
 
-  // TODO Retrieving a subset of records (with offset and length)
-  // https://www.algolia.com/doc/guides/building-search-ui/ui-and-ux-patterns/pagination/react-hooks/#retrieving-a-subset-of-records-with-offset-and-length
-  const initPaginationRes: Pick<PaginationRes, 'page' | 'hitsPerPage'> = {
-    page: params.page || 0,
-    hitsPerPage: params.hitsPerPage || 20,
-  };
-
-  const paginationParams = {
-    offset: initPaginationRes.page * initPaginationRes.hitsPerPage,
-    limit: initPaginationRes.hitsPerPage,
-  };
-
-  if (paginationParams.offset + paginationParams.limit > MAX_HITS_TOTAL) {
+  if (pagination.db.offset + pagination.db.limit > MAX_HITS_TOTAL) {
     res.status(400).json({ error: 'Pagination parameters exceed maximum' });
     return;
   }
@@ -64,6 +56,7 @@ export async function searchHandler(req: GenericReq, res: GenericRes) {
       SELECT *
       FROM %I 
       WHERE %I @@ websearch_to_tsquery(%L) 
+      %s
       OFFSET %s 
       LIMIT %s
     )
@@ -80,19 +73,12 @@ export async function searchHandler(req: GenericReq, res: GenericRes) {
     table,
     VECTOR_COLUMN,
     query,
-    paginationParams.offset,
-    paginationParams.limit
+    formatedSort,
+    pagination.db.offset,
+    pagination.db.limit
   );
 
   const result: DatabaseResult = await client.query(sql);
-
-  const paginationRes: PaginationRes = {
-    ...initPaginationRes,
-    nbHits: result.rows[0]?.total_hits,
-    nbPages: Math.ceil(
-      result.rows[0].total_hits / initPaginationRes.hitsPerPage
-    ),
-  };
 
   const searchRes: SearchRes = {
     results: [
@@ -108,7 +94,10 @@ export async function searchHandler(req: GenericReq, res: GenericRes) {
               Object.entries(row).filter(([key]) => key !== VECTOR_COLUMN)
             )
           ) || [],
-        ...paginationRes,
+        ...pagination.updateRes({
+          res: pagination.res,
+          totalHits: result.rows[0]?.total_hits,
+        }),
       },
     ],
     query,

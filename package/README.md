@@ -104,10 +104,38 @@ illustrated in the example at the beginning of this document. Provide the URL fr
 
 In the `<Hit>` component, you can access any row field using `{hit.<fieldname>}`, like in the example.
 
+### Compatibility
+
+The following components should work.:
+
+- SearchBox
+- Hits
+- HitsPerPage
+- InfiniteHits
+- Pagination
+- SortBy
+
+Sorting by columns is supported. Use the syntax `?column_name(+asc|+desc)?(+nulls+last)?,column_name_2(+asc|+desc)...`.
+
+By default Postgres sorts asc and returns null values first. So they can be left off, e.g.
+
+```javascript pages/search.tsx
+<SortBy
+  items={[
+    { label: 'Relevance', value: 'table_name_here' },
+    { label: 'Title (asc)', value: 'table_name_here?sort=column_name' },
+    {
+      label: 'Title (desc)',
+      value: 'table_name_here?sort=column_name+desc+nulls+last',
+    },
+  ]}
+/>
+```
+
 # Limitations
 
-This package is a work in progress, so not all InstantSearch components work yet. Most notably, the pagination and
-highlight components aren't ready for prime-time.
+This package is a work in progress, so not all InstantSearch components work yet. Most notably, the
+highlight components isn't ready for prime-time.
 
 ## Postgres text-search limitations
 
