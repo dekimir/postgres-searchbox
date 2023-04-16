@@ -1,6 +1,25 @@
 // During postgres-searchbar development this can be:
-import { searchHandler } from '../../../../package/build';
+import { getSearchHandler } from '../../../../package/build';
 // Otherwize you should use:
 // import { searchHandler } from 'postgres-searchbox';
 
-export default searchHandler;
+export default getSearchHandler([
+  {
+    tableName: 'postgres_searchbox_movies',
+    validHighlightColumns: [
+      'primarytitle',
+      'originaltitle',
+      'genres',
+      'titletype',
+    ],
+    validReturnColumns: [
+      'primarytitle',
+      'originaltitle',
+      'genres',
+      'titletype',
+      'startyear',
+      'endyear',
+      'runtime',
+    ],
+  },
+]);
