@@ -1,5 +1,6 @@
 import format from 'pg-format';
 import type { Hit } from '../index.types.js';
+import type { ClientOptions } from '../client.js';
 
 // const _expected = {
 //   _highlightResult: {
@@ -20,7 +21,7 @@ import type { Hit } from '../index.types.js';
 // };
 
 interface Props {
-  highlightColumns?: string[];
+  clientOptions?: ClientOptions;
   params: {
     highlightPreTag?: string;
     highlightPostTag?: string;
@@ -36,7 +37,7 @@ type Return = {
 } | null;
 
 export const getHighlight = ({
-  highlightColumns,
+  clientOptions: { highlightColumns, language } = {},
   params: { highlightPreTag, highlightPostTag, query },
 }: Props): Return => {
   if (!highlightColumns || !highlightPreTag || !highlightPostTag) {
@@ -47,11 +48,13 @@ export const getHighlight = ({
     format(
       /* sql */ `
         ts_headline(
+          %L,
           %I,
           websearch_to_tsquery(%L),
-          'StartSel=%I,StopSel=%I,MaxFragments=2,' || 'FragmentDelimiter=...,MaxWords=10,MinWords=1'
+          'StartSel=%I,StopSel=%I,MaxFragments=2,HighlightAll=true'
         ) AS %I
         `,
+      language || 'english',
       c,
       query,
       highlightPreTag,
@@ -66,6 +69,9 @@ export const getHighlight = ({
     for (const column of highlightColumns) {
       const highlight = hit[`_highlight_${column}`]?.toString();
 
+      // Delete the _highlight_* columns - theyre just used internally by this function
+      delete hit[`_highlight_${column}`];
+
       if (!highlight?.includes(highlightPreTag)) {
         hit._highlightResult[column] = {
           value: typeof hit[column] === 'string' ? (hit[column] as string) : '',
@@ -73,7 +79,7 @@ export const getHighlight = ({
           matchedWords: [],
         };
       } else {
-        console.log({ highlight, query });
+        // console.log({ highlight, query });
         hit._highlightResult[column] = {
           value: highlight,
           // Need to look at more example data to figure out how to build this

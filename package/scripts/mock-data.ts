@@ -3,12 +3,29 @@ const { Client } = pkg;
 import format from 'pg-format';
 import { faker } from '@faker-js/faker';
 
-function createRandomProduct() {
-  return [
-    faker.commerce.productName(),
-    faker.commerce.productDescription(),
-    faker.commerce.price(10, 20000, 0),
-  ];
+function createRandomProduct(i: number) {
+  const name = faker.commerce.productName();
+  const description = faker.commerce.productDescription();
+  // To test the full-text search we need some products to have
+  // common words in the name and description
+  if (i % 10 !== 0) {
+    return [name, description, faker.commerce.price(10, 20000, 0)];
+  }
+
+  // Split the name and description into words
+  const nameParts = name.split(' ');
+  const descriptionParts = description.split(' ');
+  // Pick a word from the name
+  const namePosition = Math.floor(((i % 3) / 3) * nameParts.length);
+  const nameWord = nameParts[namePosition].toLowerCase();
+  // Pick a position in the description to insert the name word
+  const descriptionPosition = Math.floor(
+    ((i % 7) / 7) * descriptionParts.length
+  );
+  // Add the name word to the description
+  descriptionParts.splice(descriptionPosition, 0, nameWord);
+
+  return [name, descriptionParts.join(' '), faker.commerce.price(10, 20000, 0)];
 }
 
 export async function initTestDatabase({
@@ -38,7 +55,7 @@ export async function initTestDatabase({
 
   const values = [];
   for (let i = 0; i < rowCount; i++) {
-    values.push(createRandomProduct());
+    values.push(createRandomProduct(i));
   }
 
   // Insert test data into test table

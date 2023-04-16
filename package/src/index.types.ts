@@ -9,6 +9,13 @@ export interface GenericRes {
   json: (data: object) => void;
 }
 
+export type HandlerOptions = {
+  tableName: string;
+  validHighlightColumns?: string[];
+  validReturnColumns?: string[];
+  validLanguages?: string[];
+}[];
+
 /**
  * Return types
  */

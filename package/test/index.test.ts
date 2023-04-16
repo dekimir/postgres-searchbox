@@ -71,7 +71,8 @@ describe('requestHandler', () => {
       id: 4,
       name: 'Bespoke Cotton Keyboard',
       description:
-        'The Apollotech B340 is an affordable wireless mouse with reliable connectivity, 12 months battery life and modern design',
+        'The Apollotech B340 is an affordable wireless mouse with ' +
+        'reliable connectivity, 12 months battery life and modern design',
       price: 8026,
     };
     // Test hits contained expected object
@@ -171,6 +172,47 @@ describe('requestHandler', () => {
   });
 
   /**
+   * Test excessive pagination returns 400
+   */
+
+  it('should return 400', async () => {
+    // Prerequisites
+    await initTestDatabase(initTestDatabaseParams);
+    await createColumnAndIndex({ tableName });
+
+    // Spy on console.log so errors don't polute the test output
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    };
+
+    const req = {
+      body: { params: { query: 'good', page: 200 }, indexName: tableName },
+    };
+    await searchHandler(req, res);
+
+    // Test status and json are called
+    expect(consoleSpy).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Request contained invalid payload',
+    });
+
+    const req2 = {
+      body: {
+        params: { query: 'good', offset: 2500, length: 2500 },
+        indexName: tableName,
+      },
+    };
+    await searchHandler(req2, res);
+
+    expect(consoleSpy).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  /**
    * Test sorting by column
    */
 
@@ -250,5 +292,104 @@ describe('requestHandler', () => {
     const hits = res.json.mock.calls[0][0].results[0].hits;
     const prices: number[] = hits.map((hit: { price: number }) => hit.price);
     expect([...prices]).toEqual(prices.sort((a, b) => b - a));
+  });
+
+  it('should handle returning columns', async () => {
+    // Prerequisites
+    await initTestDatabase(initTestDatabaseParams);
+    await createColumnAndIndex({ tableName });
+
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    };
+
+    const req = {
+      body: {
+        params: { query: 'football' },
+        indexName: tableName,
+        pgOptions: { returnColumns: ['name', 'description'] },
+      },
+    };
+    await searchHandler(req, res, [
+      { tableName, validReturnColumns: ['name', 'description'] },
+    ]);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalled();
+
+    const hits = res.json.mock.calls[0][0].results[0].hits;
+
+    // All hist should only have properties name and description
+    hits.forEach((hit: any) => {
+      expect(Object.keys(hit)).toEqual(['name', 'description']);
+    });
+
+    /**
+     * Invalid columns
+     */
+
+    await searchHandler(req, res, [
+      { tableName, validReturnColumns: ['name'] },
+    ]);
+
+    // It should have returned an error
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Request contained invalid payload',
+    });
+  });
+
+  it('should handle highlighting', async () => {
+    // Prerequisites
+    await initTestDatabase(initTestDatabaseParams);
+    await createColumnAndIndex({ tableName });
+
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    };
+
+    const req = {
+      body: {
+        params: {
+          query: 'awesome football',
+          page: 0,
+          highlightPreTag: '__ais-highlight__',
+          highlightPostTag: '__/ais-highlight__',
+        },
+        indexName: tableName,
+        pgOptions: {
+          highlightColumns: ['name', 'description'],
+        },
+      },
+    };
+    await searchHandler(req, res, [
+      { tableName, validHighlightColumns: ['name', 'description'] },
+    ]);
+
+    // Test status and json are called
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalled();
+
+    const hits = res.json.mock.calls[0][0].results[0].hits;
+
+    // It should have highlighted both of the query terms
+    // in the name and description
+    expect(hits).toMatchSnapshot();
+
+    /**
+     * Invalid columns
+     */
+
+    await searchHandler(req, res, [
+      { tableName, validHighlightColumns: ['name'] },
+    ]);
+
+    // It should have returned an error
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Request contained invalid payload',
+    });
   });
 });

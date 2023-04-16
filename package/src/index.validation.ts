@@ -1,6 +1,7 @@
 import { z } from 'zod';
 // Constants
 import { MAX_HITS_PER_PAGE, MAX_HITS_TOTAL, MAX_PAGES } from './constants.js';
+import type { HandlerOptions } from './index.types.js';
 
 /**
  * Input validation with zod
@@ -16,10 +17,7 @@ export const PaginationParams = z
     offset: z.number().gte(0).lte(MAX_HITS_TOTAL),
     length: z.number().gte(1).lte(MAX_HITS_PER_PAGE),
   })
-  .partial()
-  .refine((data) => {
-    return typeof data.offset !== 'undefined' ? !data.length : true;
-  }, 'If offset is defined, length must be defined as well.');
+  .partial();
 
 export const PostgresSearchbox = z.object({
   tableName: z.string(),
@@ -40,15 +38,43 @@ export const IndexName = z
   .min(1)
   .regex(new RegExp(/^[a-z0-9_\?\,\=\+]+$/));
 
-const PgOptions = z
-  .object({
-    // an array of columns
-    highlightColumns: z.array(z.string()).optional(),
-  })
-  .optional();
+export const validatePayload = (payload: any, options?: HandlerOptions) => {
+  // If options are provided, get the relevant options
+  // if (payload?.indexName &&  options?) {
 
-export const Json = z.object({
-  params: SearchParams.and(PaginationParams),
-  indexName: IndexName,
-  pgOptions: PgOptions,
-});
+  const thisTableOptions =
+    options && options.find((option) => option.tableName === payload.indexName);
+
+  // make a zod validator based on the options
+  const PgOptions = z
+    .object({
+      // an array of columns
+      highlightColumns: z.array(z.string()).optional(),
+      returnColumns: z.array(z.string()).optional(),
+      language: z.string().optional(),
+    })
+    .refine(({ highlightColumns }) => {
+      if (!highlightColumns?.length) return true;
+      return highlightColumns?.every((column) =>
+        thisTableOptions?.validHighlightColumns?.includes(column)
+      );
+    }, 'Invalid highlight columns')
+    .refine(({ returnColumns }) => {
+      if (!returnColumns?.length) return true;
+      return returnColumns?.every((column) =>
+        thisTableOptions?.validReturnColumns?.includes(column)
+      );
+    }, 'Invalid return columns')
+    .refine(({ language }) => {
+      if (!language) return true;
+      return thisTableOptions?.validLanguages?.includes(language);
+    }, 'Invalid language');
+
+  const Payload = z.object({
+    params: SearchParams.and(PaginationParams),
+    indexName: IndexName,
+    pgOptions: PgOptions.optional(),
+  });
+
+  return Payload.safeParse(payload);
+};
