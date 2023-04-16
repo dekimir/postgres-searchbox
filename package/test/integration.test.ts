@@ -56,12 +56,12 @@ describe('integration', () => {
   });
 
   afterAll(async () => {
+    // Tairdown express
+    await serverListener.close();
+    // Drop and close the database connection
     const dropSql = format('DROP TABLE IF EXISTS %I', tableName);
     await client.query(dropSql);
     await client.end();
-
-    // tairdown express
-    await serverListener.close();
   });
 
   it('should return results from real server: no options', async () => {

@@ -88,8 +88,8 @@ endpoint's URL.
 can simply put this in the file `pages/api/search.ts`:
 
 ```javascript pages/api/search.ts
-import { handlerNextJS } from 'postgres-searchbox';
-export default handlerNextJS;
+import { getSearchHandler } from 'postgres-searchbox';
+export default getSearchHandler();
 ```
 
 Note that the relative URL of this page is `api/search`, which is what we'll use in the next step.
@@ -114,6 +114,7 @@ The following components should work.:
 - InfiniteHits
 - Pagination
 - SortBy
+- Highlight
 
 Sorting by columns is supported. Use the syntax `?column_name(+asc|+desc)?(+nulls+last)?,column_name_2(+asc|+desc)...`.
 
@@ -130,6 +131,30 @@ By default Postgres sorts asc and returns null values first. So they can be left
     },
   ]}
 />
+```
+
+The Highlight widget works, only because it does not use _all properties_ of the usual Algolina response.
+If you use a custom UI that relies on properties `{ matchedWords, matchLevel, fullyHighlighted }` then it wont
+work correctly. See the issue https://github.com/dekimir/postgres-searchbox/issues/8
+
+Highlight requires some config to work correctly.
+
+```javascript pages/search.tsx
+const client = make_client('api/search', {
+  highlightColumns: ['column_name_here', 'column_2'],
+});
+// ...
+<Highlight hit={hit} attribute="primarytitle" className="Hit-label" />;
+```
+
+```javascript pages/api/search.ts
+import { getSearchHandler } from 'postgres-searchbox';
+export default getSearchHandler([
+  {
+    tableName: 'table_name_here',
+    validHighlightColumns: ['column_name_here', 'column_2'],
+  },
+]);
 ```
 
 # Limitations
