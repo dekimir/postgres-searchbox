@@ -7,11 +7,12 @@
         "vscode": {
             "extensions": [
                 "GitHub.copilot",
-                "qufiwefefwoyn.inline-sql-syntax"
+                "qufiwefefwoyn.inline-sql-syntax",
+                "esbenp.prettier-vscode"
             ]
         }
     },
-    "workspaceFolder": "/home/default/src"
+    "workspaceFolder": "/home/default"
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
     // "forwardPorts": [],
 }
