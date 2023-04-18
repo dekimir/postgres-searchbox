@@ -392,4 +392,44 @@ describe('requestHandler', () => {
       error: 'Request contained invalid payload',
     });
   });
+
+  it('should handle price facet', async () => {
+    // Prerequisites
+    await initTestDatabase(initTestDatabaseParams);
+    await createColumnAndIndex({ tableName });
+
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    };
+
+    const req = {
+      body: {
+        params: {
+          query: 'ball',
+          page: 0,
+          facets: `[]`,
+          numericFilters: `["price>=7500","price<=10000"]`,
+        },
+        indexName: `${tableName}?sort=price+asc`,
+      },
+    };
+
+    await searchHandler(req, res, [
+      {
+        tableName,
+        validHighlightColumns: ['name', 'description'],
+        facets: ['attribute3', 'price'],
+        disjunctiveFacets: ['attribute1', 'attribute2'],
+        hierarchicalFacets: [],
+      },
+    ]);
+
+    const hits = res.json.mock.calls[0][0].results[0].hits;
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(hits.length).toBeGreaterThanOrEqual(2);
+    expect(hits[0].price).toBe(7636);
+    expect(hits[1].price).toBe(9140);
+  });
 });

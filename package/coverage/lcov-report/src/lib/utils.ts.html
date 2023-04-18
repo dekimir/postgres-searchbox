@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for src/lib/sort.ts</title>
+    <title>Code coverage report for src/lib/utils.ts</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/lib</a> sort.ts</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/lib</a> utils.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">92.3% </span>
+                <span class="strong">42.1% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>24/26</span>
+                <span class='fraction'>8/19</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">72.72% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>8/11</span>
+                <span class='fraction'>0/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">37.5% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>5/5</span>
+                <span class='fraction'>3/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">43.75% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>17/17</span>
+                <span class='fraction'>7/16</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -100,80 +100,104 @@
 <a name='L35'></a><a href='#L35'>35</a>
 <a name='L36'></a><a href='#L36'>36</a>
 <a name='L37'></a><a href='#L37'>37</a>
-<a name='L38'></a><a href='#L38'>38</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">23x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">17x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">17x</span>
-<span class="cline-any cline-yes">16x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">7x</span>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import format from "pg-format";
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">56x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+ * @description
+ * Takes an Array&lt;V&gt;, and a grouping function,
+ * and returns a Map of the array grouped by the grouping function.
+ *
+ * @param list An array of type V.
+ * @param keyGetter A Function that takes the the Array type V as an input, and returns a value of type K.
+ *                  K is generally intended to be a property key of V.
+ *
+ * @returns Map of the array grouped by the grouping function.
+ */
+export function groupBy<span class="fstat-no" title="function not covered" >&lt;K, V&gt;(</span>
+  list: Array&lt;V&gt;,
+  keyGetter: (input: V) =&gt; K
+): Map&lt;K, Array&lt;V&gt;&gt; {
+  const map = <span class="cstat-no" title="statement not covered" >new Map&lt;K, Array&lt;V&gt;&gt;();</span>
+<span class="cstat-no" title="statement not covered" >  list.forEach(<span class="fstat-no" title="function not covered" >(item) =&gt; </span>{</span>
+    const key = <span class="cstat-no" title="statement not covered" >keyGetter(item);</span>
+    const collection = <span class="cstat-no" title="statement not covered" >map.get(key);</span>
+<span class="cstat-no" title="statement not covered" >    if (!collection) {</span>
+<span class="cstat-no" title="statement not covered" >      map.set(key, [item]);</span>
+    } else {
+<span class="cstat-no" title="statement not covered" >      collection.push(item);</span>
+    }
+  });
+<span class="cstat-no" title="statement not covered" >  return map;</span>
+}
 &nbsp;
-export const getTableAndSort = (
-  indexName: string
-): {
-  table: string;
-  formatedSort: string;
-} =&gt; {
-  const [table, queryString] = indexName.split("?");
-  // Validate table name
-  if (!table?.length) throw new Error("Invalid index name");
-  if (!queryString) return { table, formatedSort: "" };
-  // make a searchParams object from query string
-  // format each sort and join them with a comma
-  const sort = new URLSearchParams(queryString)
-    ?.get("sort")
-    ?.split(",")
-    ?.map((sort) =&gt; {
-      const [column, ...rest] = sort.split(" ");
-      <span class="missing-if-branch" title="if path not taken" >I</span>if (!column?.length) <span class="cstat-no" title="statement not covered" >return null;</span>
-      const returnArray = [format("%I", column)];
-      const restString = rest.join(" ");
-      // does reststring contain ASC or DESC using regex case insensitive
-      if (/ASC/i.test(restString)) returnArray.push("ASC");
-      if (/DESC/i.test(restString)) returnArray.push("DESC");
-      <span class="missing-if-branch" title="if path not taken" >I</span>if (/NULLS +FIRST/i.test(restString)) <span class="cstat-no" title="statement not covered" >returnArray.push("NULLS FIRST");</span>
-      if (/NULLS +LAST/i.test(restString)) returnArray.push("NULLS LAST");
-      return returnArray.join(" ");
-    })
-    .filter((s) =&gt; s)
-    ?.join(", ");
+export const <span class="cstat-no" title="statement not covered" >interleave<span class="fstat-no" title="function not covered" > </span>= <span class="fstat-no" title="function not covered" >(</span>a</span>rr: any[], x: any) =&gt;
+<span class="cstat-no" title="statement not covered" >  arr.flatMap(<span class="fstat-no" title="function not covered" >(e) =&gt; <span class="cstat-no" title="statement not covered" ></span>[e, x])</span>.slice(0, -1);</span>
 &nbsp;
-  return {
-    table,
-    formatedSort: !sort?.length ? <span class="branch-0 cbranch-no" title="branch not covered" >"" : `</span>ORDER BY ${sort}`,
-  };
-};
+/**
+ * https://stackoverflow.com/a/56592365/21643056
+ */
+&nbsp;
+export function pick&lt;T extends object, U extends keyof T&gt;(
+  obj: T,
+  paths: Array&lt;U&gt;
+): Pick&lt;T, U&gt; {
+  const ret = Object.create(null);
+  for (const k of paths) {
+    ret[k] = obj[k];
+  }
+  return ret;
+}
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->

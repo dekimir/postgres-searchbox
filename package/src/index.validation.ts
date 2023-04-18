@@ -1,7 +1,7 @@
 import { z } from 'zod';
 // Constants
 import { MAX_HITS_PER_PAGE, MAX_HITS_TOTAL, MAX_PAGES } from './constants.js';
-import type { HandlerOptions } from './index.types.js';
+import type { HandlerConfigs } from './index.types.js';
 
 /**
  * Input validation with zod
@@ -26,7 +26,9 @@ export const PostgresSearchbox = z.object({
 export const SearchParams = z.object({
   query: z.string(),
   // Unused params
-  facets: z.array(z.string()).optional(),
+  facets: z.string().optional(),
+  facetFilters: z.string().optional(),
+  numericFilters: z.string().optional(),
   highlightPostTag: z.string().optional(),
   highlightPreTag: z.string().optional(),
   tagFilters: z.string().optional(),
@@ -38,12 +40,12 @@ export const IndexName = z
   .min(1)
   .regex(new RegExp(/^[a-z0-9_\?\,\=\+]+$/));
 
-export const validatePayload = (payload: any, options?: HandlerOptions) => {
+export const validatePayload = (payload: any, configs?: HandlerConfigs) => {
   // If options are provided, get the relevant options
   // if (payload?.indexName &&  options?) {
 
   const thisTableOptions =
-    options && options.find((option) => option.tableName === payload.indexName);
+    configs && configs.find((config) => config.tableName === payload.indexName);
 
   // make a zod validator based on the options
   const PgOptions = z

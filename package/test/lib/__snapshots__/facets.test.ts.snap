@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`attributes should return SQL from facetFilters 1`] = `"( attribute1 = value OR attribute1 = value2 ) AND attribute2 = value AND attribute3 = value AND NOT attribute3 = value2 AND price >= '11' AND price >= '12' AND price <= '15' AND ( price = '12' OR price = '14' )"`;

@@ -9,12 +9,28 @@ export interface GenericRes {
   json: (data: object) => void;
 }
 
-export type HandlerOptions = {
+type PossibleSortBy = 'count' | 'isRefined' | 'name' | 'path';
+type PossibleSortOrder = 'asc' | 'desc';
+
+export type HandlerConfig = {
   tableName: string;
   validHighlightColumns?: string[];
   validReturnColumns?: string[];
   validLanguages?: string[];
-}[];
+  // https://community.algolia.com/algoliasearch-helper-js/reference.html
+  facets?: string[]; // AND
+  disjunctiveFacets?: string[]; // OR
+  hierarchicalFacets?: {
+    name: string;
+    attributes: string[];
+    separator?: string;
+    rootPath?: string;
+    showParentLevel?: boolean;
+    sortBy?: `${PossibleSortBy}':'${PossibleSortOrder}`[];
+  }[];
+};
+
+export type HandlerConfigs = HandlerConfig[];
 
 /**
  * Return types

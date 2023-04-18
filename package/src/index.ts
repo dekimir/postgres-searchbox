@@ -7,23 +7,25 @@ import { VECTOR_COLUMN } from './constants.js';
 import {
   GenericReq,
   GenericRes,
-  HandlerOptions,
+  HandlerConfigs,
   DatabaseResult,
   SearchRes,
 } from './index.types.js';
 import { validatePayload } from './index.validation.js';
 // Lib
 import { getColumns } from './lib/columns.js';
+import { getFacets } from './lib/facets.js';
 import { getHighlight } from './lib/highlight.js';
 import { getPagination } from './lib/pagination.js';
 import { getTableAndSort } from './lib/sort.js';
+import { pick } from './lib/utils.js';
 
 const client = new Client();
 client.connect();
 
 export const getSearchHandler =
-  (options?: HandlerOptions) => (req: GenericReq, res: GenericRes) => {
-    searchHandler(req, res, options);
+  (configs?: HandlerConfigs) => (req: GenericReq, res: GenericRes) => {
+    searchHandler(req, res, configs);
   };
 
 /**
@@ -33,14 +35,14 @@ export const getSearchHandler =
 export async function searchHandler(
   req: GenericReq,
   res: GenericRes,
-  options?: HandlerOptions
+  configs: HandlerConfigs = []
 ) {
   /**
    * Validate payload
    */
 
   const json = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-  const parsed = validatePayload(json, options);
+  const parsed = validatePayload(json, configs);
 
   if (!parsed.success) {
     console.error(parsed.error); // TODO maybe put error logs behind a flag
@@ -55,8 +57,14 @@ export async function searchHandler(
    */
 
   const { table, formatedSort } = getTableAndSort(indexName);
+  const thisConfig = configs?.find((c) => c.tableName === table);
   const columns = getColumns(clientOptions);
   const pagination = getPagination(params);
+  const facets = await getFacets(
+    pick(params, ['facets', 'facetFilters', 'tagFilters', 'numericFilters']),
+    thisConfig &&
+      pick(thisConfig, ['facets', 'disjunctiveFacets', 'hierarchicalFacets'])
+  );
   const highlight = getHighlight({ params, clientOptions });
 
   /**
@@ -68,13 +76,17 @@ export async function searchHandler(
     WITH aggregate AS (
       SELECT count(*)::int4 AS total_hits
       FROM %I
-      WHERE %I @@ websearch_to_tsquery(%L)
+      WHERE 
+        %I @@ websearch_to_tsquery(%L)
+        ${facets?.db.formatted ? `AND ${facets?.db.formatted}` : ``}
     ), query AS (
       SELECT 
         ${columns.db.formatted}
         ${highlight?.db.formatted ? `, ${highlight?.db.formatted}` : ``}
       FROM %I 
-      WHERE %I @@ websearch_to_tsquery(%L) 
+      WHERE 
+        %I @@ websearch_to_tsquery(%L) 
+        ${facets?.db.formatted ? `AND ${facets?.db.formatted}` : ``}
       %s
       OFFSET %s 
       LIMIT %s
