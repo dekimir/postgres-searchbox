@@ -25,10 +25,9 @@ import {
   ToggleRefinement,
 } from 'react-instantsearch-hooks-web';
 
+import { make_client } from 'postgres-searchbox/client';
 // During postgres-searchbox development this can be:
-import { make_client } from '../../../package/build/client';
-// Otherwize you should use:
-// import { make_client } from 'postgres-searchbox/client';
+// import { make_client } from '../../../package/build/client';
 
 const inter = Inter({ subsets: ['latin'] });
 
