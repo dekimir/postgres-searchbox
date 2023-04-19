@@ -2,12 +2,12 @@ import AlgoliasearchHelper from 'algoliasearch-helper';
 
 import format from 'pg-format';
 import type {
-  FacerParams,
+  FacetParams,
   FacetConfig,
-  Parsed,
   Refinement,
   Operator,
 } from './facets.types.js';
+import { parseWithDefault } from './utils.js';
 
 /**
  * This is how the facetFilters string is formatted
@@ -15,7 +15,7 @@ import type {
  * Bothe the <DynamicWidgets> and <RefinementList> components make request with this format
  */
 
-export const getFacets = async (params: FacerParams, config?: FacetConfig) => {
+export const getFacets = async (params: FacetParams, config?: FacetConfig) => {
   /**
    * Initial checks
    */
@@ -54,43 +54,17 @@ export const getFacets = async (params: FacerParams, config?: FacetConfig) => {
   }
 
   /**
-   * Passed the initial checks, we can now parse the facetFilters
+   * Passed the initial checks
    */
 
-  const parsed: Parsed = {
-    facets: [], // I don't now what this is for yet
-    facetFilters: [],
-    numericFilters: [],
-  };
-
-  const parseWithDefault = (value: string | undefined, defaultValue: any) => {
-    if (!value) return defaultValue;
-    try {
-      return JSON.parse(value);
-    } catch (error) {
-      return defaultValue;
-    }
-  };
-
-  try {
-    if (params.facets?.startsWith('[') && params.facets.endsWith(']')) {
-      parsed.facets = JSON.parse(params.facets);
-    }
-    parsed.facetFilters = parseWithDefault(params.facetFilters, []);
-    parsed.numericFilters = parseWithDefault(params.numericFilters, []);
-  } catch (error) {
-    console.log(error);
-    return null;
-  }
-
-  if (!parsed.facetFilters.length && !parsed.numericFilters.length) {
+  if (!params.facetFilters?.length && !params.numericFilters?.length) {
     console.error('No facetFilters or numericFilters aftre parsing');
     return null;
   }
 
   /**
    * Here we have:
-   * 1. A nested array of requested facetFilters on parsed.facetFilter
+   * 1. A nested array of requested facetFilters on params.facetFilter
    *    like: [["attribute1:value", "attribute2:value2"], "attribute3:value"]
    * 2. config contains information about the available facets
    */
@@ -152,14 +126,14 @@ export const getFacets = async (params: FacerParams, config?: FacetConfig) => {
     }
   };
 
-  validateRecursive(parsed.facetFilters);
+  validateRecursive(params.facetFilters);
 
   // Numeric filters
 
   const numericFacetsSet: Set<string> = new Set();
 
   const operators: Operator[] = ['<', '>', '<=', '>=', '=', '!='];
-  parsed.numericFilters.forEach((filter) => {
+  params.numericFilters?.forEach((filter) => {
     let valueArray: number[] | undefined;
     //Filter is a string of format: attribute operator value
     // Use regex to get 3 match groups

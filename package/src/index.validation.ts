@@ -25,13 +25,14 @@ export const PostgresSearchbox = z.object({
 
 export const SearchParams = z.object({
   query: z.string(),
-  // Unused params
+  // Filters
   facets: z.array(z.string()).optional(),
   facetFilters: z.array(z.array(z.string())).optional(),
-  numericFilters: z.string().optional(),
+  numericFilters: z.array(z.string()).optional(),
+  tagFilters: z.array(z.string()).optional(),
+  // Highlight
   highlightPostTag: z.string().optional(),
   highlightPreTag: z.string().optional(),
-  tagFilters: z.string().optional(),
 });
 
 export const IndexName = z

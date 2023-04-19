@@ -43,3 +43,15 @@ export function pick<T extends object, U extends keyof T>(
   }
   return ret;
 }
+
+export const parseWithDefault = (
+  value: string | undefined,
+  defaultValue: any
+) => {
+  if (!value) return defaultValue;
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return defaultValue;
+  }
+};
