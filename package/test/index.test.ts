@@ -408,8 +408,8 @@ describe('requestHandler', () => {
         params: {
           query: 'ball',
           page: 0,
-          facets: `[]`,
-          numericFilters: `["price>=7500","price<=10000"]`,
+          facets: [],
+          numericFilters: ['price>=7500', 'price<=10000'],
         },
         indexName: `${tableName}?sort=price+asc`,
       },
