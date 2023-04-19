@@ -5,6 +5,10 @@ import format from 'pg-format';
 import { readyToCreateOrDrop, getTextColumnsFromTable } from './lib.js';
 // Constants
 import { VECTOR_COLUMN, INDEX_PREFIX } from '../src/constants.js';
+import {
+  CREATE_COL_INDEX_SUCCESS,
+  DROP_COL_INDEX_SUCCESS,
+} from './constants.js';
 
 /**
  * Create the vector column and index
@@ -91,7 +95,7 @@ if (process.env.PG_SB_CREATE_COL_AND_INDEX === 'true') {
     await readyToCreateOrDrop({ tableName });
     // Can connect to db and table exists, so create index
     await createColumnAndIndex({ tableName });
-    console.log('Created column and index successfully');
+    console.log(CREATE_COL_INDEX_SUCCESS);
   })();
 }
 
@@ -103,6 +107,6 @@ if (process.env.PG_SB_DROP_COL_AND_INDEX === 'true') {
     await readyToCreateOrDrop({ tableName });
     // Can connect to db and table exists, so create index
     await dropColumnAndIndex({ tableName });
-    console.log('Dropped column and index successfully');
+    console.log(DROP_COL_INDEX_SUCCESS);
   })();
 }
