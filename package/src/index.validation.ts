@@ -26,8 +26,8 @@ export const PostgresSearchbox = z.object({
 export const SearchParams = z.object({
   query: z.string(),
   // Unused params
-  facets: z.string().optional(),
-  facetFilters: z.string().optional(),
+  facets: z.array(z.string()).optional(),
+  facetFilters: z.array(z.array(z.string())).optional(),
   numericFilters: z.string().optional(),
   highlightPostTag: z.string().optional(),
   highlightPreTag: z.string().optional(),
