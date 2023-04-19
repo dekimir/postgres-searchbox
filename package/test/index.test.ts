@@ -1,12 +1,11 @@
-import jest from 'jest-mock';
 import pkg from 'pg';
 const { Client } = pkg;
 import format from 'pg-format';
 // Scripts
-import { initTestDatabase } from '../scripts/mock-data.js';
-import { createColumnAndIndex } from '../scripts/create-index.js';
+import { initTestDatabase } from '@scripts/mock-data.js';
+import { createColumnAndIndex } from '@scripts/create-index.js';
 // Main functions
-import { searchHandler } from '../index.js';
+import { searchHandler } from '@/index.js';
 
 /**
  * This file is for testing the server side functions
@@ -169,5 +168,87 @@ describe('requestHandler', () => {
         },
       ],
     });
+  });
+
+  /**
+   * Test sorting by column
+   */
+
+  it('should sort by column', async () => {
+    // Prerequisites
+    await initTestDatabase(initTestDatabaseParams);
+    await createColumnAndIndex({ tableName });
+
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    };
+
+    const req = {
+      body: {
+        params: { query: 'good', page: 0 },
+        indexName: `${tableName}?sort=price+asc,name+asc`,
+      },
+    };
+    await searchHandler(req, res);
+
+    // Test status and json are called
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      query: req.body.params.query,
+      results: [
+        {
+          hits: expect.any(Array),
+          hitsPerPage: 20,
+          page: 0,
+          nbHits: 23,
+          nbPages: 2,
+        },
+      ],
+    });
+
+    // Test hits are sorted by price
+    const hits = res.json.mock.calls[0][0].results[0].hits;
+    const prices: number[] = hits.map((hit: { price: number }) => hit.price);
+    expect(prices).toEqual(prices.sort((a, b) => a - b));
+  });
+
+  it('should sort by column desc', async () => {
+    // Prerequisites
+    await initTestDatabase(initTestDatabaseParams);
+    await createColumnAndIndex({ tableName });
+
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    };
+
+    const req = {
+      body: {
+        params: { query: 'good', page: 0 },
+        indexName: `${tableName}?sort=price+desc`,
+      },
+    };
+    await searchHandler(req, res);
+
+    // Test status and json are called
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      query: req.body.params.query,
+      results: [
+        {
+          hits: expect.any(Array),
+          hitsPerPage: 20,
+          page: 0,
+          nbHits: 23,
+          nbPages: 2,
+        },
+      ],
+    });
+
+    // Test hits are sorted by price
+    const hits = res.json.mock.calls[0][0].results[0].hits;
+    const prices: number[] = hits.map((hit: { price: number }) => hit.price);
+    expect([...prices]).toEqual(prices.sort((a, b) => b - a));
   });
 });

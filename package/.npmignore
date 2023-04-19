@@ -1,0 +1,9 @@
+*.tsv
+*.csv
+.env
+*.env
+.env.*
+*.env.*
+jest.*
+coverage
+test

@@ -4,13 +4,21 @@ import format from 'pg-format';
 // Relative
 import { readyToCreateOrDrop, getTextColumnsFromTable } from './lib.js';
 // Constants
-import { VECTOR_COLUMN, INDEX_PREFIX } from '../constants.js';
+import { VECTOR_COLUMN, INDEX_PREFIX } from '../src/constants.js';
+import {
+  CREATE_COL_INDEX_SUCCESS,
+  DROP_COL_INDEX_SUCCESS,
+} from './constants.js';
 
 /**
  * Create the vector column and index
  */
 
-export async function createColumnAndIndex({ tableName }) {
+export async function createColumnAndIndex({
+  tableName,
+}: {
+  tableName: string;
+}) {
   const indexName = `${INDEX_PREFIX}${tableName}`;
 
   // Constants, these could be passed in as params in future
@@ -49,7 +57,7 @@ export async function createColumnAndIndex({ tableName }) {
  * For completeness, drop the vector column and index
  */
 
-export async function dropColumnAndIndex({ tableName }) {
+export async function dropColumnAndIndex({ tableName }: { tableName: string }) {
   const indexName = `${INDEX_PREFIX}${tableName}`;
 
   const client = new Client();
@@ -70,20 +78,35 @@ export async function dropColumnAndIndex({ tableName }) {
 
 /**
  * Run the script when called from package.json
+ * Self init functions because they are async.
  */
 
+const errorString = `
+  Did you forget to set PG_SB_TABLE_NAME?. 
+  Try running: PG_SB_TABLE_NAME=table_name yarn script:create-index 
+  OR PG_SB_TABLE_NAME=table_name yarn script:drop-index
+`;
+
 if (process.env.PG_SB_CREATE_COL_AND_INDEX === 'true') {
-  // Check db and table exist - throws if not
-  await readyToCreateOrDrop({ tableName: process.env.PG_SB_TABLE_NAME });
-  // Can connect to db and table exists, so create index
-  await createColumnAndIndex({ tableName: process.env.PG_SB_TABLE_NAME });
-  console.log('Created column and index successfully');
+  const tableName = process.env.PG_SB_TABLE_NAME;
+  if (!tableName?.length) throw new Error(errorString);
+  (async () => {
+    // Check db and table exist - throws if not
+    await readyToCreateOrDrop({ tableName });
+    // Can connect to db and table exists, so create index
+    await createColumnAndIndex({ tableName });
+    console.log(CREATE_COL_INDEX_SUCCESS);
+  })();
 }
 
 if (process.env.PG_SB_DROP_COL_AND_INDEX === 'true') {
-  // Check db and table exist - throws if not
-  await readyToCreateOrDrop({ tableName: process.env.PG_SB_TABLE_NAME });
-  // Can connect to db and table exists, so create index
-  await dropColumnAndIndex({ tableName: process.env.PG_SB_TABLE_NAME });
-  console.log('Dropped column and index successfully');
+  const tableName = process.env.PG_SB_TABLE_NAME;
+  if (!tableName?.length) throw new Error(errorString);
+  (async () => {
+    // Check db and table exist - throws if not
+    await readyToCreateOrDrop({ tableName });
+    // Can connect to db and table exists, so create index
+    await dropColumnAndIndex({ tableName });
+    console.log(DROP_COL_INDEX_SUCCESS);
+  })();
 }

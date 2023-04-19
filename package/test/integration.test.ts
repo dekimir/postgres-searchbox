@@ -1,13 +1,14 @@
 import express from 'express';
+import type { Server } from 'http';
 import pkg from 'pg';
 const { Client } = pkg;
 import format from 'pg-format';
 // Scripts
-import { initTestDatabase } from '../scripts/mock-data.js';
-import { createColumnAndIndex } from '../scripts/create-index.js';
+import { initTestDatabase } from '@scripts/mock-data.js';
+import { createColumnAndIndex } from '@scripts/create-index.js';
 // Main functions
-import { make_client } from '../client.js';
-import { searchHandler } from '../index.js';
+import { make_client } from '@/client.js';
+import { searchHandler } from '@/index.js';
 
 /**
  * This file is for testing the integration of server with client.
@@ -22,7 +23,7 @@ describe('integration', () => {
   const client = new Client();
   client.connect();
 
-  let serverListener;
+  let serverListener: Server;
 
   beforeAll(async () => {
     /**
@@ -77,4 +78,4 @@ describe('integration', () => {
 
     expect(response.results[0].hits[0]).toEqual(expectedResult);
   });
-}, 20_000);
+});

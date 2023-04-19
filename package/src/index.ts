@@ -1,72 +1,47 @@
 import pkg from 'pg';
 const { Client } = pkg;
 import format from 'pg-format';
-import { z } from 'zod';
 // Constants
+import { MAX_HITS_TOTAL, VECTOR_COLUMN } from './constants.js';
+// Types and validation
 import {
-  MAX_HITS_PER_PAGE,
-  MAX_PAGES,
-  MAX_HITS_TOTAL,
-  VECTOR_COLUMN,
-} from './constants.js';
+  GenericReq,
+  GenericRes,
+  DatabaseResult,
+  SearchRes,
+} from './index.types.js';
+import { Json } from './index.validation.js';
+// Lib
+import { getPagination } from './lib/pagination.js';
+import { getTableAndSort } from './lib/sort.js';
 
 const client = new Client();
 client.connect();
 
 /**
- * Input validation with zod
- */
-
-const SearchParams = z.object({
-  query: z.string(),
-  // Optional pagination params
-  page: z.number().gte(0).lte(MAX_PAGES).optional(),
-  hitsPerPage: z.number().gte(1).lte(MAX_HITS_PER_PAGE).optional(),
-  // Unused params
-  facets: z.array(z.string()).optional(),
-  highlightPostTag: z.string().optional(),
-  highlightPreTag: z.string().optional(),
-  tagFilters: z.string().optional(),
-});
-
-const Json = z.object({
-  params: SearchParams,
-  indexName: z.string(),
-});
-
-/**
  * Search handler
  */
 
-export async function searchHandler(req, res) {
+export async function searchHandler(req: GenericReq, res: GenericRes) {
   const json = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
 
-  const { success, data } = Json.safeParse(json);
+  const parsed = Json.safeParse(json);
 
-  if (!success) {
+  if (!parsed.success) {
+    console.error(parsed.error);
     res.status(400).json({ error: 'Request contained an invalid payload' });
     return;
   }
 
-  const { indexName: table, params } = data;
+  const { indexName, params } = parsed.data;
   const { query } = params;
 
-  /**
-   * Pafination
-   */
+  // Parse index name to get table and sort
+  const { table, formatedSort } = getTableAndSort(indexName);
+  // Pagination
+  const pagination = getPagination(params);
 
-  const paginationResponse = {
-    page: params.page || 0,
-    hitsPerPage: params.hitsPerPage || 20,
-    // This will be mutated later
-  };
-
-  const paginationParams = {
-    offset: paginationResponse.page * paginationResponse.hitsPerPage,
-    limit: paginationResponse.hitsPerPage,
-  };
-
-  if (paginationParams.offset + paginationParams.limit > MAX_HITS_TOTAL) {
+  if (pagination.db.offset + pagination.db.limit > MAX_HITS_TOTAL) {
     res.status(400).json({ error: 'Pagination parameters exceed maximum' });
     return;
   }
@@ -81,6 +56,7 @@ export async function searchHandler(req, res) {
       SELECT *
       FROM %I 
       WHERE %I @@ websearch_to_tsquery(%L) 
+      %s
       OFFSET %s 
       LIMIT %s
     )
@@ -97,18 +73,14 @@ export async function searchHandler(req, res) {
     table,
     VECTOR_COLUMN,
     query,
-    paginationParams.offset,
-    paginationParams.limit
+    formatedSort,
+    pagination.db.offset,
+    pagination.db.limit
   );
 
-  const result = await client.query(sql);
+  const result: DatabaseResult = await client.query(sql);
 
-  paginationResponse.nbHits = result.rows[0]?.total_hits;
-  paginationResponse.nbPages = Math.ceil(
-    result.rows[0].total_hits / paginationResponse.hitsPerPage
-  );
-
-  res.status(200).json({
+  const searchRes: SearchRes = {
     results: [
       {
         // Remove the vector column here because there is no easy way to do
@@ -122,11 +94,16 @@ export async function searchHandler(req, res) {
               Object.entries(row).filter(([key]) => key !== VECTOR_COLUMN)
             )
           ) || [],
-        ...paginationResponse,
+        ...pagination.updateRes({
+          res: pagination.res,
+          totalHits: result.rows[0]?.total_hits,
+        }),
       },
     ],
     query,
-  });
+  };
+
+  res.status(200).json(searchRes);
 }
 
 export * from './client.js';

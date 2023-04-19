@@ -1,21 +1,21 @@
+// node
+import fs from 'node:fs';
+import fsPromises from 'node:fs/promises';
+import { pipeline } from 'node:stream/promises';
 // npm
 import pkg from 'pg';
 import { from as copyFrom } from 'pg-copy-streams';
 const { Client } = pkg;
 import format from 'pg-format';
 // Relative
-import {
-  canConnectToDatabase,
-  tableExists,
-  createColumnAndIndex,
-  downloadFile,
-} from './lib.js';
+import { createColumnAndIndex } from './create-index.js';
+import { readyToCreateOrDrop, downloadFile } from './lib.js';
 
 /**
  * Create a table with tableName
  */
 
-export async function createTable({ tableName }) {
+export async function createTable({ tableName }: { tableName: string }) {
   const client = new Client();
   client.connect();
 
@@ -41,16 +41,14 @@ export async function createTable({ tableName }) {
  * Import data from remote tsv
  */
 
-export async function importData({ tableName }) {
+export async function importData({ tableName }: { tableName: string }) {
   const client = new Client();
   client.connect();
 
   // download the file with fetch
   const source = 'https://datasets.imdbws.com/title.basics.tsv.gz';
   // decleare a path for the file
-  // const target = '/tmp/title.basics.tsv';
-  const target = '/home/default/src/title.basics.tsv';
-  // const target = '/home/default/src/title.basics.sample.tsv';
+  const target = '/tmp/title.basics.tsv';
   // Check if file exists at target
   if (!fs.existsSync(target)) {
     await downloadFile(source, target);
@@ -119,7 +117,7 @@ export async function importData({ tableName }) {
  * Drop table
  */
 
-export async function dropTable({ tableName }) {
+export async function dropTable({ tableName }: { tableName: string }) {
   const client = new Client();
   client.connect();
   const sql = format('DROP TABLE IF EXISTS %I', tableName);
@@ -129,28 +127,34 @@ export async function dropTable({ tableName }) {
 
 /**
  * Run the script when called from package.json
+ * Self init functions because they are async.
  */
 
-if (process.env.PG_SB_CREATE_MOVIES === 'true') {
+(async () => {
   const tableName = 'postgres_searchbox_movies';
-  if (!(await canConnectToDatabase()))
-    throw Error('Could not connect to database');
-  if (!(await tableExists({ tableName }))) throw Error('Table does not exist');
-  // Can connect to db and table exists, so create index
-  await createTable({ tableName });
-  // Populate with data
-  await importData({ tableName });
-  // Create vector column and index
-  await createColumnAndIndex({ tableName });
-  console.log(`Created table ${tableName} successfully`);
-}
 
-if (process.env.PG_SB_DROP_MOVIES === 'true') {
-  const tableName = 'postgres_searchbox_movies';
-  if (!(await canConnectToDatabase()))
-    throw Error('Could not connect to database');
-  if (!(await tableExists({ tableName }))) throw Error('Table does not exist');
-  // Can connect to db and table exists, so create index
-  await dropTable({ tableName });
-  console.log(`Dropped table successfully: ${tableName}`);
-}
+  if (process.env.PG_SB_CREATE_MOVIES === 'true') {
+    // Check db and table exist - throws if not
+    await readyToCreateOrDrop({ tableName });
+    // Can connect to db and table exists, so create index
+    console.log(`Creating table ${tableName}...`);
+    await createTable({ tableName });
+    console.log(`Done`);
+    // Populate with data
+    console.log(`Importing data...`);
+    await importData({ tableName });
+    console.log(`Done`);
+    // Create vector column and index
+    console.log(`Creating vector column and index...`);
+    await createColumnAndIndex({ tableName });
+    console.log(`Done`);
+  }
+
+  if (process.env.PG_SB_DROP_MOVIES === 'true') {
+    // Check db and table exist - throws if not
+    await readyToCreateOrDrop({ tableName });
+    // Can connect to db and table exists, so create index
+    await dropTable({ tableName });
+    console.log(`Dropped table successfully: ${tableName}`);
+  }
+})();
