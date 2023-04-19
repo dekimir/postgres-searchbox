@@ -3,6 +3,8 @@ const { IgnorePlugin } = require('webpack');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // We may have multiple examples in the future, with an index page
+  //  that lists them. For now, we just redirect root to /movies.
   async redirects() {
     return [
       {

@@ -25,10 +25,9 @@ import {
   ToggleRefinement,
 } from 'react-instantsearch-hooks-web';
 
-// During postgres-searchbar development this can be:
-import { make_client } from '../../../package/build/client';
-// Otherwize you should use:
-// import { make_client } from 'postgres-searchbox/client';
+import { make_client } from 'postgres-searchbox/client';
+// During postgres-searchbox development this can be:
+// import { make_client } from '../../../package/build/client';
 
 const client = make_client('api/search', {
   highlightColumns: ['primarytitle', 'genres', 'titletype'],
