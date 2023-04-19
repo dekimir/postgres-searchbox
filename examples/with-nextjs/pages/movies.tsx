@@ -25,7 +25,7 @@ import {
   ToggleRefinement,
 } from 'react-instantsearch-hooks-web';
 
-// During postgres-searchbar development this can be:
+// During postgres-searchbox development this can be:
 import { make_client } from '../../../package/build/client';
 // Otherwize you should use:
 // import { make_client } from 'postgres-searchbox/client';

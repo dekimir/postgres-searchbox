@@ -193,9 +193,9 @@ To run this script `yarn install` and `yarn script:create-movies` this could tak
 
 ## Local development with example(s)
 
-During development it may be useful to see postgres-searchbar in context of a website.
-In the folder `examples/with-nextjs` is a default React (nNextJS) install with
-postgres-searchbar installed. See the 3 files:
+During development it may be useful to see postgres-searchbox in context of a website.
+In the folder `examples/with-nextjs` is a default React (NextJS) install with
+postgres-searchbox installed. See the 3 files:
 
 - `examples/with-nextjs/pages/api/search.ts`
 - `examples/with-nextjs/pages/movies.tsx`
@@ -204,9 +204,9 @@ postgres-searchbar installed. See the 3 files:
 In `examples/with-nextjs` you can `yarn && yarn dev` to get the dev. server running.
 You can see the movies page at http://locaalhost:3000/movies
 
-NextJS can import the `package/build/*.js` files, to keep them up to date run `yarn build:watch-swc` from a 2nd treminal.
+NextJS can import the `package/build/*.js` files, to keep them up to date run `yarn build:watch-swc` from a 2nd terminal.
 
-Using swc here is orders of magnitude faster than tsc. The downside is that it doesn't check for type correctnes.
+Using swc here is orders of magnitude faster than tsc. The downside is that it doesn't check for type correctness.
 
 ## Publishing to npm
 
