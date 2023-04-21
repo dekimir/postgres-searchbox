@@ -11,8 +11,8 @@ export interface PaginationRes {
   nbPages?: number;
   offset?: number;
   length?: number;
-  page?: number;
-  hitsPerPage?: number;
+  page: number;
+  hitsPerPage: number;
   exhaustiveNbHits?: boolean;
 }
 
@@ -33,6 +33,9 @@ export interface UpdateResParams {
 
 export type UpdateResReturn = PaginationResPicked & {
   nbHits: number;
+  nbPages: number;
+  page: number;
+  hitsPerPage: number;
 };
 
 /**
@@ -44,7 +47,7 @@ export type UpdateResReturn = PaginationResPicked & {
 
 export interface GetPaginationParams {
   page?: number;
-  hitsPerPage?: number;
+  hitsPerPage: number;
   offset?: number;
   length?: number;
 }

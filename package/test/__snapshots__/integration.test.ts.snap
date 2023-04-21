@@ -2,10 +2,11 @@
 
 exports[`integration should return results from real server: no options 1`] = `
 {
-  "description": "The Apollotech B340 is an affordable wireless mouse with reliable connectivity, 12 months battery life and modern design",
-  "id": 4,
-  "name": "Bespoke Cotton Keyboard",
-  "price": 8026,
+  "brand": "Powlowski, Brekke and Hamill",
+  "description": "The slim & simple Maple Gaming Keyboard from Dev Byte comes with a sleek body and 7- Color RGB LED Back-lighting for smart functionality",
+  "id": 20,
+  "name": "Bespoke Granite Keyboard",
+  "price": 14,
 }
 `;
 
@@ -16,18 +17,18 @@ exports[`integration should return results from real server: with options 1`] = 
       "fullyHighlighted": false,
       "matchLevel": "full",
       "matchedWords": [],
-      "value": "The Apollotech B340 is an __ais-highlight__affordable__/ais-highlight__ wireless mouse with reliable connectivity, 12 months battery life",
+      "value": "The slim & simple Maple Gaming __ais-highlight__Keyboard__/ais-highlight__ from Dev Byte comes with a sleek body and",
     },
     "name": {
       "fullyHighlighted": false,
       "matchLevel": "full",
       "matchedWords": [],
-      "value": "Bespoke Cotton __ais-highlight__Keyboard__/ais-highlight__",
+      "value": "__ais-highlight__Bespoke__/ais-highlight__ Granite __ais-highlight__Keyboard__/ais-highlight__",
     },
   },
-  "description": "The Apollotech B340 is an affordable wireless mouse with reliable connectivity, 12 months battery life and modern design",
-  "id": 4,
-  "name": "Bespoke Cotton Keyboard",
-  "price": 8026,
+  "description": "The slim & simple Maple Gaming Keyboard from Dev Byte comes with a sleek body and 7- Color RGB LED Back-lighting for smart functionality",
+  "id": 20,
+  "name": "Bespoke Granite Keyboard",
+  "price": 14,
 }
 `;

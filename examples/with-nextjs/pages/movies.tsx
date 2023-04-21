@@ -2,8 +2,8 @@ import Head from 'next/head';
 import Image from 'next/image';
 import { Inter } from 'next/font/google';
 import styles from '@/styles/Home.module.css';
-
 import {
+  useConnector,
   InstantSearch,
   Breadcrumb,
   Configure,
@@ -24,19 +24,28 @@ import {
   SortBy,
   ToggleRefinement,
 } from 'react-instantsearch-hooks-web';
+import connectStats from 'instantsearch.js/es/connectors/stats/connectStats';
+import type { UiState } from 'instantsearch.js';
+import type {
+  StatsConnectorParams,
+  StatsWidgetDescription,
+} from 'instantsearch.js/es/connectors/stats/connectStats';
+import { Panel } from '../components/Panel';
 
-import { make_client } from 'postgres-searchbox/client';
+type UseStatsProps = StatsConnectorParams;
+
+// import { make_client } from 'postgres-searchbox/client';
 // During postgres-searchbox development this can be:
-// import { make_client } from '../../../package/build/client';
+import { make_client } from '../../../package/build/client';
 
-const client = make_client('api/search', {
-  highlightColumns: ['primarytitle', 'genres', 'titletype'],
-});
+const client = make_client('api/search');
 
 function Hit({ hit }: { hit: any }) {
   return (
     <article>
-      <Highlight hit={hit} attribute="primarytitle" className="Hit-label" />
+      <h1>
+        <Highlight hit={hit} attribute="primarytitle" className="Hit-label" />
+      </h1>
       <p>
         {hit.titletype}, {hit.startyear}, {hit.runtimeminutes} min
       </p>
@@ -46,6 +55,11 @@ function Hit({ hit }: { hit: any }) {
 }
 
 export default function Basic() {
+  const configureProps = {
+    disjunctiveFacets: ['startyear', 'titletype'],
+    attributesToHighlight: ['primarytitle'],
+  };
+
   return (
     <>
       <Head>
@@ -58,12 +72,16 @@ export default function Basic() {
         searchClient={client}
         indexName="postgres_searchbox_movies"
       >
+        <Configure {...configureProps} />
         <div className="Container">
-          <div>Left column</div>
+          <div>
+            <DynamicWidgets fallbackComponent={FallbackComponent} />
+          </div>
           <div className="Search">
-            <SearchBox placeholder="Search" autoFocus />
+            <SearchBox placeholder="Search" autoFocus defaultValue="test" />
 
             <div className="Search-header">
+              <Stats />
               <PoweredBy />
               <HitsPerPage
                 items={[
@@ -102,5 +120,34 @@ export default function Basic() {
         </div>
       </InstantSearch>
     </>
+  );
+}
+
+function FallbackComponent({ attribute }: { attribute: string }) {
+  return (
+    <Panel header={attribute}>
+      <RefinementList attribute={attribute} />
+    </Panel>
+  );
+}
+
+/**
+ * Stats
+ */
+
+function useStats(props?: UseStatsProps) {
+  return useConnector<StatsConnectorParams, StatsWidgetDescription>(
+    connectStats,
+    props
+  );
+}
+
+function Stats(props: UseStatsProps) {
+  const { nbHits, processingTimeMS } = useStats(props);
+
+  return (
+    <span>
+      {nbHits} results found in {processingTimeMS}ms
+    </span>
   );
 }

@@ -73,7 +73,7 @@ describe('scripts', () => {
     await initTestDatabase(initTestDatabaseParams);
     const columnNames = await getTextColumnsFromTable({ tableName });
 
-    expect(columnNames).toEqual(['name', 'description']);
+    expect(columnNames).toEqual(['name', 'description', 'brand']);
   });
 
   /**

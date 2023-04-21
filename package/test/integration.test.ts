@@ -59,8 +59,8 @@ describe('integration', () => {
     // Tairdown express
     await serverListener.close();
     // Drop and close the database connection
-    const dropSql = format('DROP TABLE IF EXISTS %I', tableName);
-    await client.query(dropSql);
+    // const dropSql = format('DROP TABLE IF EXISTS %I', tableName);
+    // await client.query(dropSql);
     await client.end();
   });
 
@@ -74,7 +74,7 @@ describe('integration', () => {
     const response = await client.search([
       {
         indexName: tableName,
-        params: { query: 'affordable keyboard' },
+        params: { query: 'bespoke keyboard' },
       },
     ]);
 
@@ -98,7 +98,7 @@ describe('integration', () => {
       {
         indexName: tableName,
         params: {
-          query: 'affordable keyboard',
+          query: 'bespoke keyboard',
           highlightPreTag: '__ais-highlight__',
           highlightPostTag: '__/ais-highlight__',
         },

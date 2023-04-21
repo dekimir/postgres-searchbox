@@ -35,7 +35,7 @@ describe('sort', () => {
 
     expect(sort).toEqual({
       table: 'table',
-      formatedSort: 'ORDER BY column1',
+      formattedSort: 'ORDER BY column1',
     });
   });
 
@@ -44,7 +44,7 @@ describe('sort', () => {
 
     expect(sort).toEqual({
       table: 'table',
-      formatedSort: 'ORDER BY column1 DESC',
+      formattedSort: 'ORDER BY column1 DESC',
     });
   });
 
@@ -53,7 +53,7 @@ describe('sort', () => {
 
     expect(sort).toEqual({
       table: 'table',
-      formatedSort: 'ORDER BY column1 DESC, column2 ASC',
+      formattedSort: 'ORDER BY column1 DESC, column2 ASC',
     });
   });
 
@@ -62,7 +62,7 @@ describe('sort', () => {
 
     expect(sort).toEqual({
       table: 'table',
-      formatedSort: 'ORDER BY column1 DESC NULLS LAST',
+      formattedSort: 'ORDER BY column1 DESC NULLS LAST',
     });
   });
 
@@ -71,7 +71,7 @@ describe('sort', () => {
 
     expect(sort).toEqual({
       table: 'table',
-      formatedSort: '',
+      formattedSort: '',
     });
   });
 

@@ -1,94 +1,178 @@
-import AlgoliasearchHelper from 'algoliasearch-helper';
-
 import format from 'pg-format';
 import type {
-  FacetParams,
-  FacetConfig,
-  Refinement,
+  Props,
+  GetFacetsReturn,
+  // Refinement,
   Operator,
+  GetFacetSelectSqlParams,
 } from './facets.types.js';
 import { parseWithDefault } from './utils.js';
 
 /**
  * This is how the facetFilters string is formatted
  * https://www.algolia.com/doc/api-reference/api-parameters/facetFilters/
- * Bothe the <DynamicWidgets> and <RefinementList> components make request with this format
+ * Both the <DynamicWidgets> and <RefinementList> components make request with this format
  */
 
-export const getFacets = async (params: FacetParams, config?: FacetConfig) => {
-  /**
-   * Initial checks
-   */
+const NUMERIC_OPERATORS: Operator[] = ['<', '>', '<=', '>=', '=', '!='];
 
-  if (!config) {
-    // console.error('No config passed to getFacets');
-    return null;
-  }
+type NumericFilter = {
+  attribute: string;
+  operator: string;
+  value: number | number[];
+};
 
-  // facets & disjunctiveFacets are arrays of strings
-  // hierarchicalFacets is an array of objects
-  // get an array of the names here for use later
-  const hierarchicalFacetNames = config.hierarchicalFacets?.map(
-    (facet) => facet.name
-  );
-
-  const configFacetNames = [
-    ...(config.disjunctiveFacets || []),
-    ...(config.facets || []),
-    ...(hierarchicalFacetNames || []),
-  ];
-
-  // No available facets have been declared for this index so return null.
-  if (!configFacetNames.length) {
-    // console.error('No facets declared in config');
-    return null;
-  }
-
-  const configFacetSet = new Set(configFacetNames);
-
-  if (configFacetSet.size !== configFacetNames.length) {
-    throw new Error(
-      `Duplicate facets in config - don't share values 
-       across disjunctiveFacets, facets and hierarchicalFacets`
+export const destructureNumericFilter = (
+  numericFilter: string
+): NumericFilter => {
+  //Filter is a string of format: attribute operator value
+  const findString = `^(\\w+)(${NUMERIC_OPERATORS.join(
+    '|'
+  )})([\\[\\]\\d\\s,]+)$`;
+  // Use regex to get 3 match groups
+  const regex = new RegExp(findString, 'g');
+  const [, attribute, operator, value] = [...numericFilter.matchAll(regex)][0];
+  // Value could be a number or an array of numbers
+  const trimmedValue = value.trim();
+  let valueArray: number[] | undefined;
+  if (trimmedValue.startsWith('[') && trimmedValue.endsWith(']')) {
+    valueArray = parseWithDefault(trimmedValue, []).map((v: string) =>
+      parseInt(v)
     );
   }
+  return { attribute, operator, value: valueArray || parseInt(value) };
+};
 
-  /**
-   * Passed the initial checks
-   */
+export const getFacetSelectSql = ({
+  facets,
+  maxValuesPerFacet,
+  sortFacetValuesBy,
+}: GetFacetSelectSqlParams) => {
+  if (!facets?.length) return;
 
-  if (!params.facetFilters?.length && !params.numericFilters?.length) {
-    console.error('No facetFilters or numericFilters aftre parsing');
-    return null;
-  }
+  const limit = Number.isInteger(maxValuesPerFacet) ? maxValuesPerFacet : 10;
+
+  // For things like
+  const cte = facets
+    .map((facet) =>
+      format(
+        /* sql */ `
+        %I AS (
+          SELECT json_object_agg( %I, cnt ORDER BY cnt DESC ) as details
+            FROM (
+              SELECT %I, count(*) AS cnt
+              FROM all_selection
+              WHERE %I IS NOT NULL
+              GROUP by %I
+              ORDER BY ${
+                sortFacetValuesBy === 'count' ? `count(%I) DESC` : `%I ASC`
+              } 
+              LIMIT ${limit}
+            ) t
+        )
+      `,
+        `${facet}_selection`,
+        facet,
+        facet,
+        facet,
+        facet,
+        facet,
+        facet
+      )
+    )
+    .join(',');
+
+  const json = /* sql */ `
+    'facets', json_build_object(
+      ${facets
+        .map((facet) =>
+          format(`%L, (SELECT details FROM %I)`, facet, `${facet}_selection`)
+        )
+        .join(',')}
+    )`;
+
+  return { cte, json };
+};
+
+/**
+ * Ambiguous params
+ * maxValuesPerFacet: The maximum number of facet values to return for each facet in a regular search.
+ * sortFacetValuesBy: Controls how facet values are fetched.
+ * maxFacetHits: Maximum number of facet hits to return during a search for facet values.
+ */
+
+export const getFacets = async ({
+  facetFilters,
+  numericFilters: numericFiltersMaybeString,
+  facets: facetsMaybeString,
+  attributesForFaceting,
+  maxValuesPerFacet,
+  sortFacetValuesBy,
+  numericAttributesForFiltering,
+  maxFacetHits,
+}: Props): Promise<GetFacetsReturn> => {
+  const returnValue: GetFacetsReturn = {
+    db: {
+      selectFormatted: undefined, // 2 fragments of the main SQL query related to facet counts
+      whereFormatted: '', // A fragment of the main SQL query WHERE
+    },
+  };
+
+  // Build facets based on 2 conditionals
+  const facets: readonly string[] =
+    facetsMaybeString?.includes('*') || !facetsMaybeString
+      ? attributesForFaceting // facetsMaybeString is * or undefined
+      : Array.isArray(facetsMaybeString) // is it an array already?
+      ? facetsMaybeString // yes
+      : [facetsMaybeString]; // no, string cast to array
+
+  // Build numericFilters based on 2 conditionals
+  const numericFilters: readonly string[] = Array.isArray(
+    numericFiltersMaybeString
+  ) // is it an array already?
+    ? numericFiltersMaybeString // yes
+    : typeof numericFiltersMaybeString === 'string' // no, is it a string?
+    ? [numericFiltersMaybeString] // yes, string cast to array
+    : []; // no, return empty array
+
+  returnValue.db.selectFormatted = getFacetSelectSql({
+    facets,
+    maxValuesPerFacet,
+    sortFacetValuesBy,
+  });
+
+  // Optional params
+  // facetFilters
+  // facets
+
+  console.log(facets, '>>> facets');
+  console.log(
+    numericAttributesForFiltering,
+    '>>> numericAttributesForFiltering'
+  );
+  console.log({ facetFilters, numericFilters }, '>>> in getFacets');
+
+  if (!facetFilters?.length && !numericFilters?.length) return returnValue;
 
   /**
    * Here we have:
-   * 1. A nested array of requested facetFilters on params.facetFilter
-   *    like: [["attribute1:value", "attribute2:value2"], "attribute3:value"]
-   * 2. config contains information about the available facets
+   * 1. A nested array of 2 levels deep on facetFilters
+   *    that's been validated against validFacetFilters
+   *    like: [["attribute1:value", "attribute1:value2"], "attribute2:value"]
+   * 2. numericAttributesForFiltering contains information about the numeric facets
    */
 
-  /**
-   * Use AlgoliasearchHelper to validate the facetFilters
-   * - initialize a helper instance
-   * - add the facetFilters to the helper (any not set in config will be ignored)
-   */
+  const refinements: {
+    [key: string]: {
+      OR: string[];
+      AND: string[];
+      ['AND NOT']: string[];
+    };
+  } = {};
 
-  const client = {
-    search: () => {},
-  };
-
-  // Init a helper instance with the available facets
-  var helper = AlgoliasearchHelper(client, 'test_table', {
-    facets: config.facets,
-    disjunctiveFacets: config.disjunctiveFacets,
-    hierarchicalFacets: config.hierarchicalFacets,
-  });
-
-  // Validate
-  const validateRecursive = (facetFilters: any, depth = 0) => {
-    const type = depth < 2 ? 'conjunctive' : 'disjunctive';
+  // build - non-numeric
+  const buildRecursive = (facetFilters: any, depth = 0) => {
+    const type = depth < 2 ? 'AND' : 'OR';
 
     /**
      * Handle the case where the facetFilters is a string
@@ -97,23 +181,24 @@ export const getFacets = async (params: FacetParams, config?: FacetConfig) => {
     if (typeof facetFilters === 'string') {
       const [attribute, value] = facetFilters.split(':');
 
-      if (type === 'conjunctive' && config.facets?.includes(attribute)) {
+      if (!refinements[attribute])
+        refinements[attribute] = {
+          OR: [],
+          AND: [],
+          ['AND NOT']: [],
+        };
+
+      if (type === 'AND') {
         if (value.startsWith('-')) {
-          helper.addFacetExclusion(attribute, value);
+          const valueWithoutMinus = value.slice(1);
+          refinements[attribute]['AND NOT'].push(valueWithoutMinus);
         } else {
-          helper.addFacetRefinement(attribute, value);
+          refinements[attribute]['AND'].push(value);
         }
       }
 
-      if (
-        type === 'disjunctive' &&
-        config.disjunctiveFacets?.includes(attribute)
-      ) {
-        helper.addDisjunctiveFacetRefinement(attribute, value);
-      }
-
-      if (hierarchicalFacetNames?.includes(attribute)) {
-        helper.addHierarchicalFacetRefinement(attribute, value);
+      if (type === 'OR') {
+        refinements[attribute]['OR'].push(value);
       }
     }
 
@@ -122,137 +207,139 @@ export const getFacets = async (params: FacetParams, config?: FacetConfig) => {
      */
 
     if (Array.isArray(facetFilters)) {
-      facetFilters.forEach((filter) => validateRecursive(filter, depth + 1));
+      facetFilters.forEach((filter) => buildRecursive(filter, depth + 1));
     }
   };
 
-  validateRecursive(params.facetFilters);
+  buildRecursive(facetFilters);
 
-  // Numeric filters
+  // build - numeric
 
   const numericFacetsSet: Set<string> = new Set();
 
-  const operators: Operator[] = ['<', '>', '<=', '>=', '=', '!='];
-  params.numericFilters?.forEach((filter) => {
-    let valueArray: number[] | undefined;
-    //Filter is a string of format: attribute operator value
-    // Use regex to get 3 match groups
-    const findString = `^(\\w+)(${operators.join('|')})([\\[\\]\\d\\s,]+)$`;
-    const regex = new RegExp(findString, 'g');
+  const numericRefinements: {
+    [key: string]: string[];
+  } = {};
 
-    const [, attribute, operator, value] = [...filter.matchAll(regex)][0];
+  const numericFiltersParsed = numericFilters.map((filter: string) =>
+    destructureNumericFilter(filter)
+  );
 
-    // Value could be a number or an array of numbers
-    const trimmedValue = value.trim();
-    if (trimmedValue.startsWith('[') && trimmedValue.endsWith(']')) {
-      valueArray = parseWithDefault(trimmedValue, []).map((v: string) =>
-        parseInt(v)
+  function compareFn(a: NumericFilter, b: NumericFilter) {
+    if (a.attribute < b.attribute) return -1;
+    if (a.attribute > b.attribute) return 1;
+    // attributes are same
+    // Test values
+    if (Array.isArray(a.value) && !Array.isArray(b.value)) return 1;
+    if (!Array.isArray(a.value) && Array.isArray(b.value)) return -1;
+    if (Array.isArray(a.value) && Array.isArray(b.value)) return 0;
+    // values are not arrays
+    if (a.value < b.value) return -1;
+    if (a.value > b.value) return 1;
+    // values are the same sort by operator
+    if (a.operator === '<=' && b.operator === '<') return 1;
+    if (a.operator === '<' && b.operator === '<=') return -1;
+    if (a.operator === '>' && b.operator === '>=') return 1;
+    if (a.operator === '>=' && b.operator === '>') return -1;
+    // a must be equal to b
+    return 0;
+  }
+
+  const numericRanges = numericFiltersParsed
+    .filter(({ operator }) => ['>', '<', '>=', '<='].includes(operator))
+    .sort(compareFn);
+  const numericSimple = numericFiltersParsed.filter(
+    ({ operator }) => !['>', '<', '>=', '<='].includes(operator)
+  );
+
+  console.log(numericRanges);
+
+  // Walk through the sorted numeric filters and build an SQL string
+
+  const sql = numericRanges.reduce((acc, filter) => {
+    const { attribute, operator, value } = filter;
+
+    if (!numericRefinements[attribute]) numericRefinements[attribute] = [];
+
+    const previous = numericRefinements[attribute].slice(-1)[0];
+
+    if (operator.includes('>') && previous?.includes('>')) {
+      // Do nothing. Because > 10 AND > 20 is the same as > 10
+    } else if (operator.includes('<') && previous?.includes('>')) {
+      // We have a range
+      const inBrackets = `( ${previous} AND ${format(
+        ` %I ${operator} %I`,
+        attribute,
+        value
+      )} )`;
+      numericRefinements[attribute].pop();
+      numericRefinements[attribute].push(inBrackets);
+    } else if (operator.includes('<') && previous?.includes('<')) {
+      // We have a range
+      const sql = format(` %I ${operator} %I`, attribute, value);
+      const position = previous.length;
+      numericRefinements[attribute].pop();
+      const newSql = `${previous.slice(0, position - 1)} AND ${sql} )`;
+      numericRefinements[attribute].push(newSql);
+    } else if (operator === '!=') {
+      // we have a single value
+      numericRefinements[attribute].push(format(` %I <> %I`, attribute, value));
+    } else {
+      // we have a single value
+      numericRefinements[attribute].push(
+        format(` %I ${operator} %I`, attribute, value)
       );
     }
 
-    helper.addNumericRefinement(
-      attribute,
-      operator as Operator,
-      valueArray ?? parseInt(value)
-    );
-
-    numericFacetsSet.add(attribute);
+    //   ) {
+    // }
   });
 
-  /**
-   * Get the refinements from the helper
-   * and group them by facet into a flat array
-   */
+  console.log(numericRefinements);
 
-  const compositeRefinements = configFacetNames
-    .map((facet) => {
-      let refinements = helper.getRefinements(facet) as Refinement[];
+  // numericFilters?.forEach((filter: string) => {
+  //   const { attribute, operator, value } = destructureNumericFilter(filter);
 
-      return { facet, refinements };
-    })
-    .filter((r) => r.refinements.length > 0);
+  //   console.log({
+  //     attribute,
+  //     operator,
+  //     value,
+  //   });
 
-  /**
-   * Generate some SQL from the compositeRefinements flat array
-   * - loop over each refinement group
-   * - finally join each group with AND
-   * Outer loop, here we have a info like:
-   * [
-   *   { facet: 'brand', refinements: [ ... ] }
-   *   { facet: 'category', refinements: [ ... ] },
-   *   { facet: 'price', refinements: [ ... ] }
-   * ]
-   */
+  //   // let valueArray: number[] | undefined;
 
-  const sqlArray = compositeRefinements.map((refinement) => {
-    const { facet, refinements } = refinement;
+  //   // helper.addNumericRefinement(
+  //   //   attribute,
+  //   //   operator as Operator,
+  //   //   valueArray ?? parseInt(value)
+  //   // );
 
-    /**
-     * Inner loop, here we have a info like:
-     * {
-     *   facet: 'category',
-     *   refinements: [
-     *    { type: 'conjunctive', value: 'sports' },
-     *    { type: 'conjunctive', value: 'outdoors' }
-     *   ]
-     * }
-     */
+  //   // numericFacetsSet.add(attribute);
+  // });
 
-    const sqlParts = refinements
-      .map((r) => {
-        if (r.type === 'numeric') {
-          /**
-           * Hande numeric refinements
-           */
+  const sqlArray = Object.entries(refinements).map(([attribute, type]) => {
+    const parts = {
+      or: type.OR.length ? ` ${attribute} IN( ${format(`%L`, type.OR)} ) ` : '',
 
-          // This should always be an array
-          if (!Array.isArray(r.value)) return '';
+      and: type.AND.length
+        ? ` ${attribute} = ALL( ${format(`%L`, type.AND)} ) `
+        : '',
 
-          const sqlParts: string[] = [];
+      andNot: type['AND NOT'].length
+        ? ` ${attribute} =  NOT IN ( ${format(`%L`, type['AND NOT'])} ) `
+        : '',
+    };
 
-          r.value.forEach((v) => {
-            if (typeof v === 'number') {
-              sqlParts.push(format('%I %s %L', facet, r.operator, v));
-            }
-            if (Array.isArray(v)) {
-              v.forEach((v2) => {
-                // console.log(v2, 'v2');
-                sqlParts.push(format('%I %s %L', facet, r.operator, v2));
-              });
-            }
-          });
-
-          if (r.operator === '=' && sqlParts.length > 1) {
-            return `( ${sqlParts.join(' OR ')} )`;
-          }
-          return sqlParts.join(` AND `);
-        } else if (r.type === 'exclude') {
-          /**
-           * Handle exclude refinements
-           */
-          return format('NOT %I = %I', facet, r.value.substring(1));
-        } else {
-          /**
-           * Handle everything else
-           */
-          return format('%I = %I', facet, r.value);
-        }
-      })
-      .filter((s) => s?.length);
-
-    /**
-     * Join the parts together
-     */
-
-    // If refinements[0].type is disjunctive then they all wil be disjunctive
-    // Only OR groups with length > 1 need to be wrapped in brackets
-    if (refinements[0].type === 'disjunctive' && sqlParts.length > 1) {
-      return `( ${sqlParts.join(' OR ')} )`;
-    }
-    return sqlParts.join(` AND `);
+    return Object.values(parts)
+      .filter((p) => p.length)
+      .join(' AND ');
   });
 
-  const formattedSql = sqlArray.filter((s) => s?.length).join(' AND ');
+  returnValue.db.whereFormatted = sqlArray
+    .filter((s) => s?.length)
+    .join(' AND ');
 
-  return { db: { formatted: formattedSql } };
+  return returnValue;
+
+  // TODO Numeric filters
 };

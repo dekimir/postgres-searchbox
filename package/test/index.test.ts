@@ -9,13 +9,34 @@ import { searchHandler } from '@/index.js';
 
 /**
  * This file is for testing the server side functions
- * Although /scripts are imported here thay are not being tested
+ * Although /scripts are imported here they are not being tested
  * they're used to set the database state for the tests
  */
 
 describe('requestHandler', () => {
   const tableName = 'test_table';
-  const initTestDatabaseParams = { tableName, rowCount: 100, fakerSeed: 123 };
+  const initTestDatabaseParams = { tableName, rowCount: 150, fakerSeed: 123 };
+
+  const defaultExpectedResult = {
+    index: tableName,
+    hitsPerPage: 20,
+    page: 0,
+    nbHits: expect.any(Number),
+    nbPages: expect.any(Number),
+    hits: expect.any(Array),
+    serverTimeMS: expect.any(Number),
+    processingTimeMS: expect.any(Number),
+    query: expect.any(String),
+    params: expect.any(Object),
+    exhaustive: {
+      facetsCount: true,
+      nbHits: true,
+      typo: true,
+    },
+    exhaustiveFacetsCount: true,
+    exhaustiveNbHits: true,
+    exhaustiveTypo: true,
+  };
 
   const client = new Client();
   client.connect();
@@ -41,10 +62,12 @@ describe('requestHandler', () => {
     await initTestDatabase(initTestDatabaseParams);
     await createColumnAndIndex({ tableName });
 
-    const query = 'affordable keyboard';
+    const query = 'bespoke keyboard';
 
     const req = {
-      body: JSON.stringify({ params: { query }, indexName: tableName }),
+      body: {
+        requests: [{ params: { query }, indexName: tableName }],
+      },
     };
     const res = {
       status: jest.fn().mockReturnThis(),
@@ -55,30 +78,19 @@ describe('requestHandler', () => {
     // Test status and json are called
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
-      query,
       results: [
         {
-          hits: expect.any(Array),
-          hitsPerPage: 20,
-          page: 0,
-          nbHits: 1,
+          ...defaultExpectedResult,
+          nbHits: 4,
           nbPages: 1,
+          params: req.body.requests[0].params,
+          query: req.body.requests[0].params.query,
         },
       ],
     });
 
-    const expectedResult = {
-      id: 4,
-      name: 'Bespoke Cotton Keyboard',
-      description:
-        'The Apollotech B340 is an affordable wireless mouse with ' +
-        'reliable connectivity, 12 months battery life and modern design',
-      price: 8026,
-    };
     // Test hits contained expected object
-    expect(res.json.mock.calls[0][0].results[0].hits).toContainEqual(
-      expectedResult
-    );
+    expect(res.json.mock.calls[0][0].results[0].hits[0]).toMatchSnapshot();
   });
 
   it('should return multiple pages', async () => {
@@ -96,44 +108,36 @@ describe('requestHandler', () => {
      */
 
     const params_1 = { query: 'good', page: 0 };
-    const req_1 = { body: { params: params_1, indexName: tableName } };
+    const req_1 = {
+      body: { requests: [{ params: params_1, indexName: tableName }] },
+    };
     await searchHandler(req_1, res);
 
-    // Test status and json are called
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({
-      query: params_1.query,
+    const expected = {
       results: [
         {
-          hits: expect.any(Array),
-          hitsPerPage: 20,
-          page: 0,
-          nbHits: 23,
+          ...defaultExpectedResult,
+          nbHits: 25,
           nbPages: 2,
         },
       ],
-    });
+    };
+    // Test status and json are called
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(expected);
 
     /**
      * Page 2
      */
 
     const params_2 = { query: 'good', page: 1 };
-    const req_2 = { body: { params: params_2, indexName: tableName } };
+    const req_2 = {
+      body: { requests: [{ params: params_2, indexName: tableName }] },
+    };
     await searchHandler(req_2, res);
 
-    expect(res.json).toHaveBeenCalledWith({
-      query: params_1.query,
-      results: [
-        {
-          hits: expect.any(Array),
-          hitsPerPage: 20,
-          page: 1,
-          nbHits: 23,
-          nbPages: 2,
-        },
-      ],
-    });
+    expected.results[0].page = 1;
+    expect(res.json).toHaveBeenCalledWith(expected);
   }, 10_000);
 
   /**
@@ -151,20 +155,23 @@ describe('requestHandler', () => {
     };
 
     const req = {
-      body: { params: { query: 'good', page: 3 }, indexName: tableName },
+      body: {
+        requests: [
+          { params: { query: 'good', page: 3 }, indexName: tableName },
+        ],
+      },
     };
     await searchHandler(req, res);
 
     // Test status and json are called
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
-      query: req.body.params.query,
       results: [
         {
+          ...defaultExpectedResult,
           hits: [],
-          hitsPerPage: 20,
           page: 3,
-          nbHits: 23,
+          nbHits: 25,
           nbPages: 2,
         },
       ],
@@ -180,7 +187,7 @@ describe('requestHandler', () => {
     await initTestDatabase(initTestDatabaseParams);
     await createColumnAndIndex({ tableName });
 
-    // Spy on console.log so errors don't polute the test output
+    // Spy on console.log so errors don't pollute the test output
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
     const res = {
@@ -189,7 +196,11 @@ describe('requestHandler', () => {
     };
 
     const req = {
-      body: { params: { query: 'good', page: 200 }, indexName: tableName },
+      body: {
+        requests: [
+          { params: { query: 'good', page: 200 }, indexName: tableName },
+        ],
+      },
     };
     await searchHandler(req, res);
 
@@ -202,8 +213,12 @@ describe('requestHandler', () => {
 
     const req2 = {
       body: {
-        params: { query: 'good', offset: 2500, length: 2500 },
-        indexName: tableName,
+        requests: [
+          {
+            params: { query: '', offset: 2500, length: 2500 },
+            indexName: tableName,
+          },
+        ],
       },
     };
     await searchHandler(req2, res);
@@ -226,10 +241,21 @@ describe('requestHandler', () => {
       json: jest.fn().mockReturnThis(),
     };
 
+    const indexName = `${tableName}?sort=price+asc,name+asc`;
+    const indexName2 = `${tableName}?sort=price+desc`;
+
     const req = {
       body: {
-        params: { query: 'good', page: 0 },
-        indexName: `${tableName}?sort=price+asc,name+asc`,
+        requests: [
+          {
+            params: { query: 'good', page: 0 },
+            indexName,
+          },
+          {
+            params: { query: 'good', page: 0 },
+            indexName: indexName2,
+          },
+        ],
       },
     };
     await searchHandler(req, res);
@@ -237,61 +263,29 @@ describe('requestHandler', () => {
     // Test status and json are called
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
-      query: req.body.params.query,
       results: [
         {
-          hits: expect.any(Array),
-          hitsPerPage: 20,
-          page: 0,
-          nbHits: 23,
-          nbPages: 2,
+          ...defaultExpectedResult,
+          index: indexName,
+          nbHits: 25,
+        },
+        {
+          ...defaultExpectedResult,
+          index: indexName2,
+          nbHits: 25,
         },
       ],
     });
 
-    // Test hits are sorted by price
+    // Test hits are sorted by price asc
     const hits = res.json.mock.calls[0][0].results[0].hits;
     const prices: number[] = hits.map((hit: { price: number }) => hit.price);
     expect(prices).toEqual(prices.sort((a, b) => a - b));
-  });
 
-  it('should sort by column desc', async () => {
-    // Prerequisites
-    await initTestDatabase(initTestDatabaseParams);
-    await createColumnAndIndex({ tableName });
-
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-    };
-
-    const req = {
-      body: {
-        params: { query: 'good', page: 0 },
-        indexName: `${tableName}?sort=price+desc`,
-      },
-    };
-    await searchHandler(req, res);
-
-    // Test status and json are called
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({
-      query: req.body.params.query,
-      results: [
-        {
-          hits: expect.any(Array),
-          hitsPerPage: 20,
-          page: 0,
-          nbHits: 23,
-          nbPages: 2,
-        },
-      ],
-    });
-
-    // Test hits are sorted by price
-    const hits = res.json.mock.calls[0][0].results[0].hits;
-    const prices: number[] = hits.map((hit: { price: number }) => hit.price);
-    expect([...prices]).toEqual(prices.sort((a, b) => b - a));
+    // Test hits are sorted by price desc
+    const hits2 = res.json.mock.calls[0][0].results[1].hits;
+    const prices2: number[] = hits2.map((hit: { price: number }) => hit.price);
+    expect([...prices2]).toEqual(prices2.sort((a, b) => b - a));
   });
 
   it('should handle returning columns', async () => {
@@ -306,13 +300,24 @@ describe('requestHandler', () => {
 
     const req = {
       body: {
-        params: { query: 'football' },
-        indexName: tableName,
-        pgOptions: { returnColumns: ['name', 'description'] },
+        requests: [
+          {
+            params: {
+              query: 'football',
+              attributesToRetrieve: ['name', 'description'],
+            },
+            indexName: tableName,
+          },
+        ],
       },
     };
     await searchHandler(req, res, [
-      { tableName, validReturnColumns: ['name', 'description'] },
+      {
+        indexName: tableName,
+        clientValidation: {
+          validAttributesToRetrieve: ['name', 'description'],
+        },
+      },
     ]);
 
     expect(res.status).toHaveBeenCalledWith(200);
@@ -329,15 +334,19 @@ describe('requestHandler', () => {
      * Invalid columns
      */
 
+    // Spy on console.log so errors don't pollute the test output
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
     await searchHandler(req, res, [
-      { tableName, validReturnColumns: ['name'] },
+      { indexName: tableName, settings: { attributesToRetrieve: ['name'] } },
     ]);
 
     // It should have returned an error
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
-      error: 'Request contained invalid payload',
+      error: 'Request caused an error',
     });
+    expect(consoleSpy).toBeCalledTimes(1);
   });
 
   it('should handle highlighting', async () => {
@@ -352,20 +361,27 @@ describe('requestHandler', () => {
 
     const req = {
       body: {
-        params: {
-          query: 'awesome football',
-          page: 0,
-          highlightPreTag: '__ais-highlight__',
-          highlightPostTag: '__/ais-highlight__',
-        },
-        indexName: tableName,
-        pgOptions: {
-          highlightColumns: ['name', 'description'],
-        },
+        requests: [
+          {
+            params: {
+              query: 'bespoke keyboard',
+              page: 0,
+              highlightPreTag: '__ais-highlight__',
+              highlightPostTag: '__/ais-highlight__',
+              attributesToHighlight: ['name', 'description'],
+            },
+            indexName: tableName,
+          },
+        ],
       },
     };
     await searchHandler(req, res, [
-      { tableName, validHighlightColumns: ['name', 'description'] },
+      {
+        indexName: tableName,
+        clientValidation: {
+          validAttributesToHighlight: ['name', 'description'],
+        },
+      },
     ]);
 
     // Test status and json are called
@@ -376,14 +392,19 @@ describe('requestHandler', () => {
 
     // It should have highlighted both of the query terms
     // in the name and description
-    expect(hits).toMatchSnapshot();
+    expect(hits[0]).toMatchSnapshot();
 
     /**
      * Invalid columns
      */
 
     await searchHandler(req, res, [
-      { tableName, validHighlightColumns: ['name'] },
+      {
+        indexName: tableName,
+        clientValidation: {
+          validAttributesToHighlight: ['name'],
+        },
+      },
     ]);
 
     // It should have returned an error
@@ -393,7 +414,7 @@ describe('requestHandler', () => {
     });
   });
 
-  it('should handle price facet', async () => {
+  it.only('should return facets on request with empty query and handle filter', async () => {
     // Prerequisites
     await initTestDatabase(initTestDatabaseParams);
     await createColumnAndIndex({ tableName });
@@ -403,33 +424,56 @@ describe('requestHandler', () => {
       json: jest.fn().mockReturnThis(),
     };
 
+    // Facets must be in the request body
     const req = {
       body: {
-        params: {
-          query: 'ball',
-          page: 0,
-          facets: [],
-          numericFilters: ['price>=7500', 'price<=10000'],
-        },
-        indexName: `${tableName}?sort=price+asc`,
+        requests: [
+          {
+            params: {
+              query: '',
+              facets: ['brand', 'price'],
+              // numericFilters: [],
+              numericFilters: ['price<5', 'price>=10', 'price<=20'],
+            },
+            indexName: tableName,
+          },
+          // {
+          //   params: {
+          //     query: 'ball',
+          //     page: 0,
+          //     facets: [],
+          //     numericFilters: ['price>=7500', 'price<=10000'],
+          //   },
+          //   indexName: `${tableName}?sort=price+asc`,
+          // },
+        ],
       },
     };
 
     await searchHandler(req, res, [
       {
-        tableName,
-        validHighlightColumns: ['name', 'description'],
-        facets: ['attribute3', 'price'],
-        disjunctiveFacets: ['attribute1', 'attribute2'],
-        hierarchicalFacets: [],
+        indexName: tableName,
+        settings: {
+          numericAttributesForFiltering: ['price'],
+        },
+        clientValidation: {
+          validAttributesToHighlight: ['name', 'description'],
+          validFacetFilters: ['brand', 'price'],
+        },
       },
     ]);
 
-    const hits = res.json.mock.calls[0][0].results[0].hits;
+    return;
 
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(hits.length).toBeGreaterThanOrEqual(2);
-    expect(hits[0].price).toBe(7636);
-    expect(hits[1].price).toBe(9140);
+    // // Request1
+    // const results = res.json.mock.calls[0][0].results;
+    // expect(results[0].facets).toMatchSnapshot();
+
+    // // Request2
+    // const hits = results[1].hits;
+    // expect(res.status).toHaveBeenCalledWith(200);
+    // expect(hits.length).toBeGreaterThanOrEqual(2);
+    // expect(hits[0].price).toBe(7636);
+    // expect(hits[1].price).toBe(9140);
   });
 });

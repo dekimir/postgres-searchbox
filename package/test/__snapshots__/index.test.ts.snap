@@ -1,26 +1,93 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`requestHandler should handle highlighting 1`] = `
-[
-  {
-    "_highlightResult": {
-      "description": {
-        "fullyHighlighted": false,
-        "matchLevel": "full",
-        "matchedWords": [],
-        "value": "__ais-highlight__Football__/ais-highlight__ __ais-highlight__awesome__/ais-highlight__ Is Good For Training And Recreational Purposes",
-      },
-      "name": {
-        "fullyHighlighted": false,
-        "matchLevel": "full",
-        "matchedWords": [],
-        "value": "__ais-highlight__Awesome__/ais-highlight__ Concrete Towels",
-      },
+{
+  "_highlightResult": {
+    "description": {
+      "fullyHighlighted": false,
+      "matchLevel": "full",
+      "matchedWords": [],
+      "value": "The slim & simple Maple Gaming __ais-highlight__Keyboard__/ais-highlight__ from Dev Byte comes with a sleek body and",
     },
-    "description": "The Football awesome Is Good For Training And Recreational Purposes",
-    "id": 31,
-    "name": "Awesome Concrete Towels",
-    "price": 3187,
+    "name": {
+      "fullyHighlighted": false,
+      "matchLevel": "full",
+      "matchedWords": [],
+      "value": "__ais-highlight__Bespoke__/ais-highlight__ Granite __ais-highlight__Keyboard__/ais-highlight__",
+    },
   },
-]
+  "brand": "Powlowski, Brekke and Hamill",
+  "description": "The slim & simple Maple Gaming Keyboard from Dev Byte comes with a sleek body and 7- Color RGB LED Back-lighting for smart functionality",
+  "id": 20,
+  "name": "Bespoke Granite Keyboard",
+  "price": 14,
+}
+`;
+
+exports[`requestHandler should return facets on request with empty query 1`] = `
+{
+  "brand": {
+    "Abshire - Carroll": 2,
+    "Hammes Group": 2,
+    "Hayes - Kutch": 2,
+    "Hickle - Bins": 2,
+    "Kessler Inc": 2,
+    "Kiehn Inc": 2,
+    "Langworth, Kuvalis and Kohler": 2,
+    "Littel, Borer and Bergstrom": 2,
+    "Muller - Sporer": 2,
+    "Smitham Group": 2,
+  },
+  "price": {
+    "11": 6,
+    "12": 7,
+    "13": 10,
+    "14": 6,
+    "19": 5,
+    "22": 8,
+    "24": 9,
+    "33": 7,
+    "38": 7,
+    "39": 6,
+  },
+}
+`;
+
+exports[`requestHandler should return facets on request with empty query and handle filter 1`] = `
+{
+  "brand": {
+    "Abshire - Carroll": 2,
+    "Hammes Group": 2,
+    "Hayes - Kutch": 2,
+    "Hickle - Bins": 2,
+    "Kessler Inc": 2,
+    "Kiehn Inc": 2,
+    "Langworth, Kuvalis and Kohler": 2,
+    "Littel, Borer and Bergstrom": 2,
+    "Muller - Sporer": 2,
+    "Smitham Group": 2,
+  },
+  "price": {
+    "11": 6,
+    "12": 7,
+    "13": 10,
+    "14": 6,
+    "19": 5,
+    "22": 8,
+    "24": 9,
+    "33": 7,
+    "38": 7,
+    "39": 6,
+  },
+}
+`;
+
+exports[`requestHandler should return results 1`] = `
+{
+  "brand": "Powlowski, Brekke and Hamill",
+  "description": "The slim & simple Maple Gaming Keyboard from Dev Byte comes with a sleek body and 7- Color RGB LED Back-lighting for smart functionality",
+  "id": 20,
+  "name": "Bespoke Granite Keyboard",
+  "price": 14,
+}
 `;

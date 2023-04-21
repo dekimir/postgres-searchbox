@@ -1,32 +1,13 @@
 import format from 'pg-format';
-import type { Hit } from '../index.types.js';
-import type { ClientOptions } from '../client.js';
-
-// const _expected = {
-//   _highlightResult: {
-//     name: {
-//       value:
-//         'Samsung - 2.1-Channel Soundbar __ais-highlight__Sy__/ais-highlight__stem with Wireless Subwoofer - Black',
-//       matchLevel: 'full',
-//       fullyHighlighted: false,
-//       matchedWords: ['siy'],
-//     },
-//     description: {
-//       value:
-//         'This Samsung soundbar has a 37-inch soundboard with a wireless 6.5-inch subwoofer. The 300W power output provides a rich, surround sound feel. Bluetooth connectivity, HDMI and USB ports let you connect this soundbar to any device. Control this Samsung soundbar using your phone or mobile device with the Samsung Audio Remote app.',
-//       matchLevel: 'none',
-//       matchedWords: [],
-//     },
-//   },
-// };
+// Types
+import type { SearchOptions } from '../client.types.js';
+import type { Hit, Settings } from '../index.types.js';
 
 interface Props {
-  clientOptions?: ClientOptions;
-  params: {
-    highlightPreTag?: string;
-    highlightPostTag?: string;
-    query: string;
-  };
+  query?: SearchOptions['query'];
+  attributesToHighlight: Required<Settings>['attributesToHighlight'];
+  highlightPreTag: Required<Settings>['highlightPreTag'];
+  highlightPostTag: Required<Settings>['highlightPostTag'];
 }
 
 type Return = {
@@ -37,14 +18,18 @@ type Return = {
 } | null;
 
 export const getHighlight = ({
-  clientOptions: { highlightColumns, language } = {},
-  params: { highlightPreTag, highlightPostTag, query },
+  query,
+  attributesToHighlight,
+  highlightPreTag,
+  highlightPostTag,
 }: Props): Return => {
-  if (!highlightColumns || !highlightPreTag || !highlightPostTag) {
+  const language = 'english';
+
+  if (!attributesToHighlight?.length) {
     return null;
   }
 
-  const formatted = highlightColumns.map((c) =>
+  const formatted = attributesToHighlight.map((c) =>
     format(
       /* sql */ `
         ts_headline(
@@ -54,7 +39,7 @@ export const getHighlight = ({
           'StartSel=%I,StopSel=%I,MaxFragments=2,HighlightAll=true'
         ) AS %I
         `,
-      language || 'english',
+      language,
       c,
       query,
       highlightPreTag,
@@ -66,10 +51,10 @@ export const getHighlight = ({
   const updateHit = (hit: Hit): Hit => {
     hit._highlightResult = {};
 
-    for (const column of highlightColumns) {
+    for (const column of attributesToHighlight) {
       const highlight = hit[`_highlight_${column}`]?.toString();
 
-      // Delete the _highlight_* columns - theyre just used internally by this function
+      // Delete the _highlight_* columns - they're just used internally by this function
       delete hit[`_highlight_${column}`];
 
       if (!highlight?.includes(highlightPreTag)) {

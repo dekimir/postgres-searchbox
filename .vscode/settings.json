@@ -2,5 +2,24 @@
   "editor.formatOnSave": true,
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "cSpell.words": [
+    "algoliasearch",
+    "Apollotech",
+    "indexdef",
+    "indexname",
+    "instantsearch",
+    "primarytitle",
+    "runtimeminutes",
+    "Searchbox",
+    "snippeting",
+    "startyear",
+    "swcrc",
+    "tablename",
+    "titletype",
+    "tsquery",
+    "tsvector",
+    "unretrievable",
+    "websearch"
+  ]
 }

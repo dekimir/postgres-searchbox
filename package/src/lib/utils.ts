@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 /**
  * @description
  * Takes an Array<V>, and a grouping function,
@@ -54,4 +56,71 @@ export const parseWithDefault = (
   } catch (error) {
     return defaultValue;
   }
+};
+
+/**
+ * Validation helpers
+
+ */
+
+/**
+ * Implements
+ * This helps us when we already have TS types and want to make a zod schema.
+ * It ensures our schema is compatible with our types.
+ * https://github.com/colinhacks/zod/issues/372#issuecomment-1280054492
+ * e.g. The package @algolia/client-search has a type called SearchOptions.
+ * We pick which properties we want to use - we don't have all the features of Algolia.
+ * Then that type is used to create a zod schema.
+ * With Implements,
+ * - if we miss a property from our schema, we get a type error.
+ * - if we add an incorrect property to our schema, we get a type error.
+ */
+
+type Implements<Model> = {
+  [key in keyof Model]-?: undefined extends Model[key]
+    ? null extends Model[key]
+      ? z.ZodNullableType<z.ZodOptionalType<z.ZodType<Model[key]>>>
+      : z.ZodOptionalType<z.ZodType<Model[key]>>
+    : null extends Model[key]
+    ? z.ZodNullableType<z.ZodType<Model[key]>>
+    : z.ZodType<Model[key]>;
+};
+
+export function implement<Model = never>() {
+  return {
+    with: <
+      Schema extends Implements<Model> & {
+        [unknownKey in Exclude<keyof Schema, keyof Model>]: never;
+      }
+    >(
+      schema: Schema
+    ) => z.object(schema),
+  };
+}
+
+/**
+ * undefinedOrIn
+ * Used in e.g. schema refinement to check if a client value is in a list of valid values.
+ */
+
+export const undefinedOrIn = (
+  val: string | readonly string[] | undefined,
+  array: string[]
+) => {
+  if (!val) return true;
+  if (typeof val === 'string') return array.includes(val);
+  return val.every((v) => array.includes(v));
+};
+
+/**
+ * undefinedOrLte
+ * Used in e.g. schema refinement to check if a client value is less than or equal to a max value.
+ */
+
+export const undefinedOrLte = (
+  val: number | undefined,
+  max: number
+): boolean => {
+  if (!val) return true;
+  return val <= max;
 };
