@@ -102,7 +102,7 @@ To put up a web page with a searchbox for your table's contents, use the Instant
 illustrated in the example at the beginning of this document. Provide the URL from the last step to the
 `make_client` function and the table name to the `indexName` parameter.
 
-In the `<Hit>` component, you can access any row field using `{hit.<fieldname>}`, like in the example.
+In the `<Hit>` component, you can access any row field using `{hit.<fieldName>}`, like in the example.
 
 ### Compatibility
 
@@ -134,7 +134,7 @@ By default Postgres sorts asc and returns null values first. So they can be left
 />
 ```
 
-The Highlight widget works, only because it does not use _all properties_ of the usual Algolina response.
+The Highlight widget works, only because it does not use _all properties_ of the usual Algolia response.
 If you use a custom UI that relies on properties `{ matchedWords, matchLevel, fullyHighlighted }` then it wont
 work correctly. See the issue https://github.com/dekimir/postgres-searchbox/issues/8
 
@@ -272,7 +272,7 @@ Postgres is not quite at the Elastic level of functionality yet. For example, it
 for mistyped terms, and its multi-language support is uneven.
 
 The search index created by `postgres-searchbox` is the general search index, whose performance isn't necessarily
-optimal for all possible usecases. There are other indexing options, which require customization by an experienced
+optimal for all possible use cases. There are other indexing options, which require customization by an experienced
 developer.
 
 It's also worth mentioning that `postgres-searchbox` currently requires a precise match for diacritics (accents on
@@ -316,12 +316,12 @@ Getting started without docker
 
 ## Real-world data
 
-To work with a modest dataset of 20K rows. You can import an Algolina dataset
+To work with a modest dataset of 20K rows. You can import an Algolia dataset
 [algolia/instant-search-demo](https://github.com/algolia/instant-search-demo) collected from the bestbuy API.
 A helper script to create a table, download, insert, and index the data is at `packages/scripts/create-store.ts`.
 To run this script `yarn install` and `yarn script:create-store`, the database is around 20MB.
 
-To work with a dataset of 10M rows. You can import https://datasets.imdbws.com/title.basics.tsv.gz from imdb.
+To work with a dataset of 10M rows. You can import https://datasets.imdbws.com/title.basics.tsv.gz from IMDB.
 A helper script to create a table, download, insert, and index the data is at `packages/scripts/create-movies.ts`.
 To run this script `yarn install` and `yarn script:create-movies` this could take 5-10 minutes.
 
