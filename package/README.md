@@ -148,14 +148,11 @@ const client = make_client('api/search');
 
 ```javascript pages/api/search.ts
 import { getSearchHandler } from 'postgres-searchbox';
-export default getSearchHandler([
-  {
-    indexName: 'table_name_here',
-    settings: {
-      attributesToHighlight: ['column_name_here'],
-    },
+export default getSearchHandler({
+  settings: {
+    attributesToHighlight: ['column_name_here'],
   },
-]);
+});
 ```
 
 ## Configuring
