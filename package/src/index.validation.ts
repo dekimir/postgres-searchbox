@@ -1,13 +1,18 @@
 import { z } from 'zod';
-// Utils
-import { implement, undefinedOrIn, undefinedOrLte } from './lib/utils.js';
 // Constants
-import { MAX_HITS_PER_PAGE, MAX_HITS_TOTAL, MAX_PAGES } from './constants.js';
-// Types
-import type { HandlerConfigWithDefaults } from './index.types.js';
-import type { SearchOptions } from './client.types.js';
+import {
+  MAX_REQ_PER_HTTP_REQ,
+  MAX_HITS_PER_PAGE,
+  MAX_HITS_TOTAL,
+  MAX_PAGES,
+} from './constants.js';
 // Lib
-import { destructureNumericFilter } from './lib/facets.js';
+import { destructureNumericFilter } from './lib/filters.js';
+// Utils
+import { implement, isIn, undefinedOrLte } from './utils/index.js';
+// Types
+import type { SearchOptions } from './client.types.js';
+import type { Handler } from './index.types.js';
 
 /**
  * This file is for validation of the payload from the client
@@ -21,7 +26,7 @@ export const SearchOptionsSchema = implement<SearchOptions>().with({
   // * ✅ 1/2 🛑
   attributesToRetrieve: z.array(z.string()).optional(),
   // * Filtering
-  // * ✅ 1/6 🛑
+  // * ✅ 2/6 🛑
   facetFilters: z
     .union([z.array(z.string()), z.array(z.array(z.string()))])
     .optional(),
@@ -57,33 +62,46 @@ export const SearchOptionsSchema = implement<SearchOptions>().with({
  * Successful validation returns a typed object
  */
 
+/**
+ * Initial validation of the payload
+ * This is to ensure that the payload is an array of objects
+ * with indexName and params
+ */
+
 export const IndexName = z
   .string()
   .max(200)
   .min(1)
   .regex(new RegExp(/^[a-z0-9_\?\,\=\+]+$/));
 
-const RequestSchema = z.object({
-  params: SearchOptionsSchema,
-  indexName: IndexName,
-});
-
 const RequestSchemaInitial = z.object({
-  params: z.any(),
   indexName: IndexName,
+  params: z.any(),
 });
 
 export const initialValidation = (payload: any) => {
   const Payload = z.object({
-    requests: z.array(RequestSchemaInitial).max(15),
+    requests: z.array(RequestSchemaInitial).max(MAX_REQ_PER_HTTP_REQ),
   });
 
   return Payload.safeParse(payload);
 };
 
+export type RequestInitial = z.infer<typeof RequestSchemaInitial>;
+
+/**
+ * 2nd validation - for each object of the payload
+ */
+
+const RequestSchema = z.object({
+  params: SearchOptionsSchema,
+  indexName: IndexName,
+});
+
 export const validatePayload = (
   request: z.infer<typeof RequestSchemaInitial>,
-  clientValidation: HandlerConfigWithDefaults['clientValidation']
+  clientValidation: Handler.ConfigWithDefaults['clientValidation'],
+  mergedSettings: Handler.ConfigWithDefaults['settings']
 ) => {
   const {
     validAttributesToRetrieve,
@@ -99,13 +117,21 @@ export const validatePayload = (
 
   const RequestSchemaRefined = RequestSchema.refine(
     ({ params: { attributesToRetrieve } }) =>
-      undefinedOrIn(attributesToRetrieve, validAttributesToRetrieve),
-    'Invalid attributesToRetrieve'
+      validAttributesToRetrieve.includes('*') ||
+      isIn(
+        attributesToRetrieve || mergedSettings.attributesToRetrieve,
+        validAttributesToRetrieve
+      ),
+    'Invalid attributesToRetrieve, not contained by validAttributesToRetrieve'
   )
     .refine(
       ({ params: { attributesToHighlight } }) =>
-        undefinedOrIn(attributesToHighlight, validAttributesToHighlight),
-      'Invalid attributesToHighlight'
+        validAttributesToHighlight.includes('*') ||
+        isIn(
+          attributesToHighlight || mergedSettings.attributesToHighlight,
+          validAttributesToHighlight
+        ),
+      'Invalid attributesToHighlight, not contained by validAttributesToHighlight'
     )
     .refine(
       ({ params: { page } }) => undefinedOrLte(page, maxPage),
@@ -126,13 +152,19 @@ export const validatePayload = (
     )
     .refine(
       ({ params: { highlightPostTag } }) =>
-        undefinedOrIn(highlightPostTag, validHighlightPostTags),
-      'Invalid highlightPostTag'
+        isIn(
+          highlightPostTag || mergedSettings.highlightPostTag,
+          validHighlightPostTags
+        ),
+      'Invalid highlightPostTag, not in validHighlightPostTags'
     )
     .refine(
       ({ params: { highlightPreTag } }) =>
-        undefinedOrIn(highlightPreTag, validHighlightPreTags),
-      'Invalid highlightPreTag'
+        isIn(
+          highlightPreTag || mergedSettings.highlightPreTag,
+          validHighlightPreTags
+        ),
+      'Invalid highlightPreTag, not in validHighlightPostTags'
     )
     .refine(({ params: { facetFilters } }) => {
       if (!facetFilters || validFacetFilters.includes('*')) return true;
@@ -153,15 +185,7 @@ export const validatePayload = (
   return RequestSchemaRefined.safeParse(request);
 };
 
-// export type SearchOptions = z.infer<typeof SearchOptionsSchema>;
-
-// const PgOptions = z.object({
-//   // an array of columns
-//   highlightColumns: z.array(z.string()).optional(),
-//   returnColumns: z.array(z.string()).optional(),
-//   language: z.string().optional(),
-// });
-
-// export type Request = z.infer<typeof Request>;
-// export type PgOptions = z.infer<typeof PgOptions>;
-export type RequestSchemaInitial = z.infer<typeof RequestSchemaInitial>;
+export default {
+  initial: initialValidation,
+  payload: validatePayload,
+};

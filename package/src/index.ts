@@ -1,53 +1,30 @@
-import pkg from 'pg';
-const { Client } = pkg;
 import format from 'pg-format';
-// Constants
-import {
-  VECTOR_COLUMN,
-  defaultSettings,
-  defaultClientValidation,
-} from './constants.js';
-// Types and validation
+import { defaults, VECTOR_COLUMN } from './constants.js';
+import validate from './index.validation.js';
+import * as lib from './lib/index.js';
+import { pick, getClient } from './utils/index.js';
 import type {
-  GenericReq,
-  GenericRes,
-  Settings,
-  HandlerConfig,
-  HandlerConfigs,
+  Handler,
+  Inferred,
   DatabaseResult,
   SearchResponse,
 } from './index.types.js';
-import {
-  initialValidation,
-  RequestSchemaInitial,
-  validatePayload,
-} from './index.validation.js';
-// Lib
-import { getColumns } from './lib/columns.js';
-import { getFacets } from './lib/facets.js';
-import { getHighlight } from './lib/highlight.js';
-import { getPagination } from './lib/pagination.js';
-import { getTableAndSort } from './lib/sort.js';
-import { pick } from './lib/utils.js';
 
-const client = new Client();
-client.connect();
+const client = getClient();
 
-export const getSearchHandler = (configs?: HandlerConfigs) => (
-  req: GenericReq,
-  res: GenericRes
-) => {
-  searchHandler(req, res, configs);
-};
+export const getSearchHandler =
+  (configs?: Handler.Configs) => (req: Handler.Req, res: Handler.Res) => {
+    searchHandler(req, res, configs);
+  };
 
 /**
  * Search handler
  */
 
 export async function searchHandler(
-  req: GenericReq,
-  res: GenericRes,
-  configs: HandlerConfigs = []
+  req: Handler.Req,
+  res: Handler.Res,
+  configs: Handler.Config | Handler.Configs = []
 ) {
   /**
    * Validate payload
@@ -55,7 +32,7 @@ export async function searchHandler(
 
   const json = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
 
-  const parsed = initialValidation(json);
+  const parsed = validate.initial(json);
 
   if (!parsed.success) {
     console.error(parsed.error.issues); // TODO maybe put error logs behind a flag
@@ -71,8 +48,10 @@ export async function searchHandler(
   for (const request of parsed.data.requests) {
     // Indexname without the sort order query param
     const [indexName] = request.indexName.split('?');
-    // Get the user config for the indexName
-    const config = configs?.find((config) => config.indexName === indexName);
+    // If array, get the user config by indexName, else configs is config object
+    const config = Array.isArray(configs)
+      ? configs?.find((config) => config.indexName === indexName)
+      : configs;
     // Handle the request & push it to the promises array
     resultsPromises.push(handleRequest(request, config));
   }
@@ -98,13 +77,15 @@ export async function searchHandler(
   res.status(200).json({ results });
 }
 
+/**
+ * Handle single request (called inside loop)
+ */
+
 const handleRequest = async (
-  request: RequestSchemaInitial,
-  config?: HandlerConfig
+  request: Inferred.RequestInitial,
+  config?: Handler.Config
 ): Promise<SearchResponse> => {
   const start = performance.now();
-
-  console.log({ request });
 
   /**
    * Validate
@@ -112,58 +93,72 @@ const handleRequest = async (
 
   // Merge the user's config.clientValidation & default clientValidation
   const clientValidation = {
-    ...defaultClientValidation,
+    ...defaults.clientValidation,
     ...config?.clientValidation,
   };
+
+  // Merge the user's config.settings & default settings
+  const settings = { ...defaults.settings, ...config?.settings };
+
   // Validate the request against clientValidation parameters
-  const parsed = validatePayload(request, clientValidation);
+  const parsed = validate.payload(request, clientValidation, settings);
+
   // If invalid, return error
   if (!parsed.success) {
     // console.error(parsed.error.issues);
     throw parsed.error;
   }
-  // Merge the user's config.settings & default settings
-  const settings = { ...defaultSettings, ...config?.settings };
 
   /**
    * Define constants and merge settings with params
    */
 
-  const { indexName, params } = request;
+  const { indexName, params } = parsed.data;
   const { query } = params;
-  const settingsWithParams = { ...settings, ...params };
-
-  console.log({ params });
+  const paramsWithSettings = { ...settings, ...params };
 
   /**
    * Lib functions
    */
 
-  const { table, formattedSort } = getTableAndSort(indexName);
+  const { table, formattedSort } = lib.getTableAndSort(indexName);
 
-  const columns = getColumns(
+  const columns = lib.getColumns(
     params.attributesToRetrieve || settings.attributesToRetrieve
   );
 
-  const pagination = getPagination(
-    pick(settingsWithParams, ['page', 'hitsPerPage', 'length', 'offset'])
+  const pagination = lib.getPagination(
+    pick(paramsWithSettings, ['page', 'hitsPerPage', 'length', 'offset'])
   );
 
-  const facets = await getFacets(
-    pick(settingsWithParams, [
-      'facetFilters',
-      'numericFilters',
+  if (paramsWithSettings.attributesForFaceting.includes('*')) {
+    const result = await client.query(lib.getAttributes(table).db.formatted);
+    paramsWithSettings.attributesForFaceting = result.rows[0].columns;
+  }
+
+  const facets = await lib.getFacets(
+    pick(paramsWithSettings, [
       'facets',
       'attributesForFaceting',
       'maxValuesPerFacet',
       'sortFacetValuesBy',
+      'maxFacetHits',
+      'renderingContent',
+    ])
+  );
+
+  const filters = await lib.getFilters(
+    pick(paramsWithSettings, [
+      'facetFilters',
+      'numericFilters',
+      'attributesForFaceting',
       'numericAttributesForFiltering',
       'maxFacetHits',
     ])
   );
 
-  const highlight = getHighlight(
-    pick(settingsWithParams, [
+  const highlight = lib.getHighlight(
+    pick(paramsWithSettings, [
       'query',
       'attributesToHighlight',
       'highlightPreTag',
@@ -185,8 +180,7 @@ const handleRequest = async (
       FROM %I
       WHERE
         ( ( %I @@ websearch_to_tsquery(%L) AND %L <> '' )  OR %L = '' )
-        ${facets?.db.whereFormatted ? ` AND ${facets?.db.whereFormatted}` : ``}
-        -- LIMIT 10000
+        ${filters?.db.formatted ? ` AND ${filters?.db.formatted}` : ``}
     ),
     --
     -- Step 2: Get the search results (hits)
@@ -203,9 +197,7 @@ const handleRequest = async (
     --
     -- Step 3: Get the counts for each facet
     --
-    ${
-      facets.db.selectFormatted?.cte ? `, ${facets.db.selectFormatted.cte}` : ''
-    }
+    ${facets?.db?.cte ? `, ${facets.db.cte}` : ''}
     --
     -- Step 4: Return it all as a JSON object
     -- 4a. totalHits and hits are always returned
@@ -215,11 +207,7 @@ const handleRequest = async (
     SELECT json_build_object(
       'totalHits', ( SELECT count(*) FROM all_selection ),
       'hits', jsonb_agg(hits_selection.*)::jsonb
-      ${
-        facets.db.selectFormatted?.json
-          ? `, ${facets.db.selectFormatted.json}`
-          : ''
-      }
+      ${facets?.db?.json ? `, ${facets.db.json}` : ''}
     ) AS "json"
     FROM hits_selection
   )`,
@@ -243,6 +231,23 @@ const handleRequest = async (
 
   const timeTaken = Math.ceil(performance.now() - start);
 
+  // params is an object with nested arrays, need to urlEncode each value
+  // then cast it to a string with URLSearchParams
+  const paramsFlat = Object.entries(params).reduce(
+    (acc, [key, value]) => {
+      if (typeof value !== 'string') {
+        acc[key] = JSON.stringify(value);
+      } else {
+        acc[key] = value;
+      }
+      return acc;
+    },
+    {} as {
+      [key: string]: string;
+    }
+  );
+  const paramsString = new URLSearchParams(paramsFlat).toString();
+
   return {
     hits:
       hits?.map((hit) => {
@@ -255,14 +260,12 @@ const handleRequest = async (
     }),
     ...(dbFacets && { facets: dbFacets }),
     processingTimeMS: timeTaken,
-    ...(settings.renderingContent && {
-      renderingContent: settings.renderingContent,
+    ...(facets?.renderingContent && {
+      renderingContent: facets.renderingContent,
     }),
     index: indexName,
     query: query || '',
-    params: Array.isArray(params)
-      ? new URLSearchParams(params).toString()
-      : params.toString(),
+    params: paramsString,
     exhaustiveFacetsCount: true,
     exhaustiveNbHits: true,
   };

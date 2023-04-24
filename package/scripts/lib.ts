@@ -92,13 +92,26 @@ export async function getTextColumnsFromTable({
   const client = new Client();
   client.connect();
   const sql = format(
-    `SELECT column_name FROM information_schema.columns WHERE table_name = %L AND data_type = %L`,
+    `SELECT column_name FROM information_schema.columns WHERE table_name = %L AND data_type IN ( %L, %L )`,
     tableName,
-    'text'
+    'text',
+    'character varying'
   );
   const data = await client.query(sql);
   client.end();
   return data.rows.map((row) => row.column_name);
+}
+
+/**
+ * Drop table
+ */
+
+export async function dropTable({ tableName }: { tableName: string }) {
+  const client = new Client();
+  client.connect();
+  const sql = format('DROP TABLE IF EXISTS %I', tableName);
+  await client.query(sql);
+  client.end();
 }
 
 /**

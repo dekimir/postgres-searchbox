@@ -1,3 +1,4 @@
+import { defaults } from '@/constants.js';
 import { getHighlight } from '@/lib/highlight.js';
 
 // remove line breaks and any extra spaces
@@ -15,15 +16,11 @@ const normalizeSql = (sql: string) => {
 describe('highlight', () => {
   it('should handle offset and length', async () => {
     const props = {
-      params: {
-        query: 'test',
-        highlightPreTag: '__ais-highlight__',
-        highlightPostTag: '__/ais-highlight__',
-      },
-      clientOptions: {
-        highlightColumns: ['primarytitle', 'genres', 'titletype'],
-        language: 'english',
-      },
+      ...defaults.settings,
+      query: 'test',
+      attributesToHighlight: ['primarytitle', 'genres', 'titletype'],
+      highlightPreTag: '__ais-highlight__',
+      highlightPostTag: '__/ais-highlight__',
     };
 
     const highlight = getHighlight(props);
@@ -34,7 +31,7 @@ describe('highlight', () => {
 
     // for all formatted sql statements
     highlight?.db.formatted.forEach((sql, index) => {
-      const column = props.clientOptions.highlightColumns[index];
+      const column = props.attributesToHighlight[index];
 
       const expected = normalizeSql(/* sql */ `
         ts_headline(

@@ -1,9 +1,7 @@
-import type {
-  Settings as AlgoliaSettings,
-  SearchResponse as AlgoliaSearchResponse,
-} from '@algolia/client-search';
-// import { PaginationRes } from './lib/pagination.types.js';
-import { ClientValidation } from './client.types.js';
+import type { AlgoliaSettings, AlgoliaSearchResponse } from './bundle.types.js';
+
+import type { ClientValidation } from './client.types.js';
+export type * from './client.types.js';
 
 // These are in the same order as the Algolia docs
 // https://www.algolia.com/doc/api-reference/settings-api-parameters/
@@ -52,37 +50,53 @@ export type Settings = Pick<
 // type PossibleSortBy = 'count' | 'isRefined' | 'name' | 'path';
 // type PossibleSortOrder = 'asc' | 'desc';
 
-export type HandlerConfig = {
-  indexName?: string;
-  settings?: Settings;
-  clientValidation?: ClientValidation;
-};
-
-// When there is an array with more than one
-// require indexName property
-export type HandlerConfigs =
-  | [HandlerConfig]
-  | (HandlerConfig & { indexName: string })[];
-
-export type HandlerConfigWithDefaults = Omit<
-  HandlerConfig,
-  'clientValidation' | 'settings'
-> & {
-  clientValidation: Required<ClientValidation>;
-  settings: Required<Settings>;
-};
-
 /**
- * Request and response types
+ * Handler namespace
  */
 
-export interface GenericReq {
-  body: string | object;
+export namespace Handler {
+  /**
+   * Request and response types
+   */
+
+  export interface Req {
+    body: string | object;
+  }
+
+  export interface Res {
+    status: (code: number) => Res;
+    json: (data: object) => void;
+  }
+
+  /**
+   * Handlers
+   */
+
+  export type Config = {
+    indexName?: string;
+    settings?: Settings;
+    clientValidation?: ClientValidation;
+  };
+
+  // When there is an array with more than one
+  // require indexName property
+  export type Configs = [Config] | (Config & { indexName: string })[];
+
+  export type ConfigWithDefaults = Omit<
+    Config,
+    'clientValidation' | 'settings'
+  > & {
+    clientValidation: Required<ClientValidation>;
+    settings: Required<Settings>;
+  };
 }
 
-export interface GenericRes {
-  status: (code: number) => GenericRes;
-  json: (data: object) => void;
+/**
+ * Inferred types - from writing a zod schema then using infer
+ */
+
+export namespace Inferred {
+  export type RequestInitial = import('./index.validation.js').RequestInitial;
 }
 
 /**
@@ -136,6 +150,7 @@ export type SearchResponse = Pick<
   | 'hitsPerPage'
   | 'exhaustiveNbHits'
   | 'exhaustiveFacetsCount'
+  // | 'exhaustiveTypo'
   | 'processingTimeMS'
   | 'query'
   | 'params'
@@ -143,9 +158,6 @@ export type SearchResponse = Pick<
   | 'indexUsed'
   | 'facets_stats'
   | 'renderingContent'
-  // | 'serverTimeMS'
-  // | 'exhaustiveTypo'
-  // | 'exhaustive'
 > & {
   hits: Hit[];
 };

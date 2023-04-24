@@ -8,11 +8,11 @@ export const MAX_HITS_PER_PAGE = 100;
 export const MAX_PAGES = 100;
 export const MAX_HITS_TOTAL = 3000;
 
-export const defaultSettings: Required<Settings> = {
+const defaultSettings: Required<Settings> = {
   // * Attributes
   searchableAttributes: ['*'],
   attributesToRetrieve: ['*'],
-  attributesForFaceting: [],
+  attributesForFaceting: ['*'],
   // * Faceting
   maxValuesPerFacet: 10,
   sortFacetValuesBy: 'count',
@@ -21,16 +21,20 @@ export const defaultSettings: Required<Settings> = {
   highlightPreTag: '__ais-highlight__',
   highlightPostTag: '__/ais-highlight__',
   // * Pagination
-  hitsPerPage: 15,
+  hitsPerPage: 20,
   paginationLimitedTo: MAX_HITS_TOTAL,
   // * Performance
   numericAttributesForFiltering: [],
   // * Advanced
   maxFacetHits: 100,
-  renderingContent: {},
+  renderingContent: {
+    facetOrdering: {
+      facets: { order: ['*'] },
+    },
+  },
 };
 
-export const defaultClientValidation: Required<ClientValidation> = {
+const defaultClientValidation: Required<ClientValidation> = {
   // * Attributes
   validAttributesToRetrieve: ['*'],
   // * Filtering
@@ -45,4 +49,9 @@ export const defaultClientValidation: Required<ClientValidation> = {
   maxOffset: MAX_HITS_TOTAL,
   maxLength: MAX_HITS_PER_PAGE,
   maxHitsTotal: MAX_HITS_TOTAL,
+};
+
+export const defaults = {
+  settings: defaultSettings,
+  clientValidation: defaultClientValidation,
 };

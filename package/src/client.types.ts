@@ -1,4 +1,4 @@
-import type { SearchOptions as AlgoliaSearchOptions } from '@algolia/client-search';
+import type { AlgoliaSearchOptions } from './bundle.types.js';
 
 // These are in the same order as the Algolia docs
 // https://www.algolia.com/doc/api-reference/search-api-parameters/
@@ -13,23 +13,25 @@ export type SearchOptions = Pick<
   // * ✅ 1/2 🛑
   | 'attributesToRetrieve'
   // * Filtering
-  // * ✅ 1/6 🛑
+  // * ✅ 2/6 🛑
   // | 'filters'
   | 'facetFilters'
   | 'numericFilters'
   // | 'tagFilters'
   // * Faceting
-  // * ✅ 1/3 🛑
+  // * ✅ 2/4 🛑
   // | 'facets' // See below
   | 'maxValuesPerFacet'
   | 'sortFacetValuesBy'
   // | 'optionalFacetFilters'
   // * Highlighting Snippeting
-  // * ✅ 1/3 🛑
+  // * ✅ 3/6 🛑
   | 'attributesToHighlight'
   // | 'attributesToSnippet'
   | 'highlightPreTag'
   | 'highlightPostTag'
+  // | 'snippetEllipsisText'
+  // | 'restrictHighlightAndSnippetArrays'
   // * Pagination
   // * ✅ 4/4 ✅
   | 'page'
@@ -38,11 +40,12 @@ export type SearchOptions = Pick<
   | 'length'
   // * Advanced
   // * ✅ 1/14 🛑
+  // | 'responseFields'
   | 'maxFacetHits'
 > & {
   // * Faceting
   // Custom because it can be a string or an array
-  facets: AlgoliaSearchOptions['facets'] | string;
+  facets?: AlgoliaSearchOptions['facets'] | string;
 };
 
 export type ClientValidation = {

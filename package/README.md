@@ -53,7 +53,7 @@ Here is how you can make your Postgres data searchable in three easy steps:
 
 ## Create a Search Index for Your Postgres Table
 
-Install the package and peer dependencies to your project with `yarn add postgres-searchbox pg pg-format zod`.
+Install the package and peer dependencies to your project with `yarn add postgres-searchbox`.
 
 `postgres-searchbox` includes a script that can generate the SQL commands for creating a search index on the table
 you want to search. The script is at `scripts/create-index.js`; it reads the table definition and creates a search
@@ -210,7 +210,12 @@ Getting started without docker
   - PGDATABASE
 - `yarn test:watch`
 
-## Realworld data
+## Real-world data
+
+To work with a modest dataset of 20K rows. You can import an Algolina dataset
+[algolia/instant-search-demo](https://github.com/algolia/instant-search-demo) collected from the bestbuy API.
+A helper script to create a table, download, insert, and index the data is at `packages/scripts/create-store.ts`.
+To run this script `yarn install` and `yarn script:create-store`, the database is around 20MB.
 
 To work with a dataset of 10M rows. You can import https://datasets.imdbws.com/title.basics.tsv.gz from imdb.
 A helper script to create a table, download, insert, and index the data is at `packages/scripts/create-movies.ts`.
@@ -224,12 +229,14 @@ postgres-searchbox installed. See the 3 files:
 
 - `examples/with-nextjs/pages/api/search.ts`
 - `examples/with-nextjs/pages/movies.tsx`
-- `examples/with-nextjs/styles/Movies.module.css`
+- `examples/with-nextjs/pages/store.tsx`
 
 In `examples/with-nextjs` you can `yarn && yarn dev` to get the dev. server running.
-You can see the movies page at http://locaalhost:3000/movies
 
-NextJS can import the `package/build/*.js` files, to keep them up to date run `yarn build:watch-swc` from a 2nd terminal.
+- You can see the movies page at http://locaalhost:3000/movies
+- You can see the store page at http://locaalhost:3000/store
+
+NextJS can import the `package/build/*.js` files, to keep them up to date run `yarn dev` from a 2nd terminal.
 
 Using swc here is orders of magnitude faster than tsc. The downside is that it doesn't check for type correctness.
 

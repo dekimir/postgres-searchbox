@@ -24,22 +24,30 @@ describe('requestHandler', () => {
     nbHits: expect.any(Number),
     nbPages: expect.any(Number),
     hits: expect.any(Array),
-    serverTimeMS: expect.any(Number),
+    facets: expect.any(Object),
     processingTimeMS: expect.any(Number),
     query: expect.any(String),
-    params: expect.any(Object),
-    exhaustive: {
-      facetsCount: true,
-      nbHits: true,
-      typo: true,
-    },
+    params: expect.any(String),
     exhaustiveFacetsCount: true,
     exhaustiveNbHits: true,
-    exhaustiveTypo: true,
+    renderingContent: expect.any(Object),
   };
 
   const client = new Client();
   client.connect();
+
+  const res = {
+    json: jest.fn().mockReturnThis(),
+    status: jest.fn().mockReturnThis(),
+  };
+
+  let consoleSpy: jest.SpyInstance | undefined;
+
+  afterEach(async () => {
+    res.json.mockClear();
+    res.status.mockClear();
+    consoleSpy?.mockRestore?.();
+  });
 
   beforeEach(async () => {
     // Drop the table so that the tests can be run independently
@@ -83,7 +91,7 @@ describe('requestHandler', () => {
           ...defaultExpectedResult,
           nbHits: 4,
           nbPages: 1,
-          params: req.body.requests[0].params,
+          params: new URLSearchParams(req.body.requests[0].params).toString(),
           query: req.body.requests[0].params.query,
         },
       ],
@@ -186,14 +194,8 @@ describe('requestHandler', () => {
     // Prerequisites
     await initTestDatabase(initTestDatabaseParams);
     await createColumnAndIndex({ tableName });
-
     // Spy on console.log so errors don't pollute the test output
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-    };
+    consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
     const req = {
       body: {
@@ -235,11 +237,6 @@ describe('requestHandler', () => {
     // Prerequisites
     await initTestDatabase(initTestDatabaseParams);
     await createColumnAndIndex({ tableName });
-
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-    };
 
     const indexName = `${tableName}?sort=price+asc,name+asc`;
     const indexName2 = `${tableName}?sort=price+desc`;
@@ -293,11 +290,6 @@ describe('requestHandler', () => {
     await initTestDatabase(initTestDatabaseParams);
     await createColumnAndIndex({ tableName });
 
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-    };
-
     const req = {
       body: {
         requests: [
@@ -335,16 +327,21 @@ describe('requestHandler', () => {
      */
 
     // Spy on console.log so errors don't pollute the test output
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
     await searchHandler(req, res, [
-      { indexName: tableName, settings: { attributesToRetrieve: ['name'] } },
+      {
+        indexName: tableName,
+        clientValidation: {
+          validAttributesToRetrieve: ['name'],
+        },
+      },
     ]);
 
     // It should have returned an error
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
-      error: 'Request caused an error',
+      error: 'Request contained invalid payload',
     });
     expect(consoleSpy).toBeCalledTimes(1);
   });
@@ -398,6 +395,8 @@ describe('requestHandler', () => {
      * Invalid columns
      */
 
+    consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
     await searchHandler(req, res, [
       {
         indexName: tableName,
@@ -412,9 +411,10 @@ describe('requestHandler', () => {
     expect(res.json).toHaveBeenCalledWith({
       error: 'Request contained invalid payload',
     });
+    expect(consoleSpy).toBeCalledTimes(1);
   });
 
-  it.only('should return facets on request with empty query and handle filter', async () => {
+  it('should return facets on request with empty query', async () => {
     // Prerequisites
     await initTestDatabase(initTestDatabaseParams);
     await createColumnAndIndex({ tableName });
@@ -432,20 +432,19 @@ describe('requestHandler', () => {
             params: {
               query: '',
               facets: ['brand', 'price'],
-              // numericFilters: [],
-              numericFilters: ['price<5', 'price>=10', 'price<=20'],
+              numericFilters: [],
             },
             indexName: tableName,
           },
-          // {
-          //   params: {
-          //     query: 'ball',
-          //     page: 0,
-          //     facets: [],
-          //     numericFilters: ['price>=7500', 'price<=10000'],
-          //   },
-          //   indexName: `${tableName}?sort=price+asc`,
-          // },
+          {
+            params: {
+              query: 'ball',
+              page: 0,
+              facets: [],
+              numericFilters: ['price<5', 'price>=10', 'price<=20'],
+            },
+            indexName: `${tableName}?sort=price+asc`,
+          },
         ],
       },
     };
@@ -463,17 +462,65 @@ describe('requestHandler', () => {
       },
     ]);
 
-    return;
+    const results = res.json.mock.calls[0][0].results;
+    expect(results[0].facets).toMatchSnapshot();
+  });
 
-    // // Request1
-    // const results = res.json.mock.calls[0][0].results;
-    // expect(results[0].facets).toMatchSnapshot();
+  it('should handle filter', async () => {
+    // Prerequisites
+    await initTestDatabase(initTestDatabaseParams);
+    await createColumnAndIndex({ tableName });
 
-    // // Request2
-    // const hits = results[1].hits;
-    // expect(res.status).toHaveBeenCalledWith(200);
-    // expect(hits.length).toBeGreaterThanOrEqual(2);
-    // expect(hits[0].price).toBe(7636);
-    // expect(hits[1].price).toBe(9140);
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    };
+
+    const req = {
+      body: {
+        requests: [
+          {
+            params: {
+              query: '',
+              facetFilters: ['brand:Jacobi LLC', 'brand:-test'],
+            },
+            indexName: tableName,
+          },
+          {
+            params: {
+              query: 'ball',
+              numericFilters: ['price>=10', 'price<=20'],
+            },
+            indexName: `${tableName}?sort=price+asc`,
+          },
+        ],
+      },
+    };
+
+    await searchHandler(req, res, [
+      {
+        indexName: tableName,
+        settings: {
+          numericAttributesForFiltering: ['price'],
+        },
+        clientValidation: {
+          validFacetFilters: ['brand', 'price'],
+        },
+      },
+    ]);
+
+    // Request1
+    const results = res.json.mock.calls[0][0].results;
+    expect(results[0].hits[0].brand).toBe('Jacobi LLC');
+
+    // Request2
+    const hits = results[1].hits;
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(hits.length).toBeGreaterThanOrEqual(2);
+    // expect all hits to be between 10 and 20
+    hits.forEach((hit: any) => {
+      expect(hit.price).toBeGreaterThanOrEqual(10);
+      expect(hit.price).toBeLessThanOrEqual(20);
+    });
   });
 });

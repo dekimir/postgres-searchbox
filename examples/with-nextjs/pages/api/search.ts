@@ -1,15 +1,12 @@
-// import { searchHandler } from 'postgres-searchbox';
+import { getSearchHandler } from 'postgres-searchbox';
 // During postgres-searchbox development this can be:
-import { getSearchHandler } from '../../../../package/build/index.js';
+// import { getSearchHandler } from '../../../../package/build/index.js';
 
 // https://github.com/algolia/algoliasearch-client-javascript/blob/eacfca290813eac98211b0da3c78c41393977c37/packages/client-search/src/types/Settings.ts
 
 export default getSearchHandler([
   {
     indexName: 'postgres_searchbox_movies',
-    // Settings https://www.algolia.com/doc/api-reference/settings-api-parameters/
-    settings: {},
-    clientValidation: {},
   },
   {
     indexName: 'bestbuy_product',

@@ -5,9 +5,9 @@ import format from 'pg-format';
 import { initTestDatabase } from '@scripts/mock-data.js';
 import { createColumnAndIndex } from '@scripts/create-index.js';
 // Lib
-import { getFacets, updateRes } from '@/lib/facets.js';
+import { getFacets } from '@/lib/facets.js';
 // Constants
-import { defaultSettings } from '@/constants.js';
+import { defaults } from '@/constants.js';
 
 /**
  * Test facets
@@ -40,11 +40,11 @@ describe('facets', () => {
     await createColumnAndIndex({ tableName });
 
     const facets = await getFacets({
-      ...defaultSettings,
+      ...defaults.settings,
       facets: ['brand', 'price'],
     });
 
-    const { cte, json } = facets.db.selectFormatted || {};
+    const { cte, json } = facets?.db || {};
 
     expect(typeof cte).toBe('string');
     expect(typeof json).toBe('string');
@@ -82,43 +82,5 @@ describe('facets', () => {
     expect(result.rows[0].json.hits).toHaveLength(10);
     expect(result.rows[0].json.facets.brand).toMatchSnapshot();
     expect(result.rows[0].json.facets.price).toMatchSnapshot();
-  });
-
-  it.only('should return SQL from facetFilters', async () => {
-    const returnValue = await getFacets({
-      ...defaultSettings,
-      // facetFilters: [
-      //   [
-      //     'attribute1:value',
-      //     'attribute1:value2',
-      //     'attribute2:value',
-      //     'attribute5:value',
-      //   ],
-      //   'attribute3:value',
-      //   'attribute3:-value2',
-      //   'attribute4:value2',
-      // ],
-      // facets: ['attribute1'],
-      numericFilters: [
-        'year=2019',
-        'price!=[8,16]',
-        'price<=15',
-        'price<15',
-        'price>11',
-        'price>=11',
-        'price=11',
-        'price=[11,12]',
-        'price>=12',
-        'price>=13',
-        'price=[12,14]',
-        'price>=20',
-        'price<24',
-        'price<25',
-      ],
-    });
-
-    console.log(returnValue);
-
-    // expect(returnValue?.db?.whereFormatted).toMatchSnapshot();
   });
 });

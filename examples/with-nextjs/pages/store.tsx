@@ -23,10 +23,11 @@ import { Panel } from '../components/Panel';
 
 type UseStatsProps = StatsConnectorParams;
 
-// import { make_client } from 'postgres-searchbox/client';
+import { make_client } from 'postgres-searchbox-de-fork/client';
+import type { SearchOptions } from 'postgres-searchbox/client.types';
 // During postgres-searchbox development this can be:
-import { make_client } from '../../../package/build/client';
-import type { SearchOptions } from '../../../package/build/client.types';
+// import { make_client } from '../../../package/build/client.js';
+// import type { SearchOptions } from '../../../package/build/client.types.js';
 
 const client = make_client('api/search');
 

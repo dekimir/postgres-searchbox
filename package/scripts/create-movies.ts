@@ -9,7 +9,7 @@ const { Client } = pkg;
 import format from 'pg-format';
 // Relative
 import { createColumnAndIndex } from './create-index.js';
-import { readyToCreateOrDrop, downloadFile } from './lib.js';
+import { readyToCreateOrDrop, dropTable, downloadFile } from './lib.js';
 
 /**
  * Create a table with tableName
@@ -114,20 +114,9 @@ export async function importData({ tableName }: { tableName: string }) {
 }
 
 /**
- * Drop table
- */
-
-export async function dropTable({ tableName }: { tableName: string }) {
-  const client = new Client();
-  client.connect();
-  const sql = format('DROP TABLE IF EXISTS %I', tableName);
-  await client.query(sql);
-  client.end();
-}
-
-/**
  * Run the script when called from package.json
- * Self init functions because they are async.
+ * Self init functions because top-level await is
+ * un-supported in node < v14.8.0.
  */
 
 (async () => {

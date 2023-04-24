@@ -1,7 +1,31 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`facets should return SQL from facetFilters 1`] = `"( attribute1 = value OR attribute1 = value2 ) AND attribute2 = value AND attribute3 = value AND NOT attribute3 = value2 AND price >= '11' AND price >= '12' AND price <= '15' AND ( price = '12' OR price = '14' )"`;
+exports[`facets should return workingSQL fragments 1`] = `
+{
+  "Abshire - Carroll": 2,
+  "Hayes - Kutch": 2,
+  "Hickle - Bins": 2,
+  "Kessler Inc": 2,
+  "Langworth, Kuvalis and Kohler": 2,
+  "Littel, Borer and Bergstrom": 2,
+  "Murphy and Sons": 2,
+  "O'Keefe, Ullrich and Heller": 2,
+  "Powlowski, Brekke and Hamill": 2,
+  "Smitham Group": 2,
+}
+`;
 
-exports[`facets should return workingSQL fragments 1`] = `"{ "Powlowski, Brekke and Hamill" : 2, "Smitham Group" : 2, "Murphy and Sons" : 2, "Hayes - Kutch" : 2, "Langworth, Kuvalis and Kohler" : 2, "O'Keefe, Ullrich and Heller" : 2, "Littel, Borer and Bergstrom" : 2, "Abshire - Carroll" : 2, "Kessler Inc" : 2, "Hickle - Bins" : 2, "Mann Inc" : 1, "Brekke and Sons" : 1, "Torp - Cronin" : 1, "Hettinger - Hintz" : 1, "Witting Group" : 1, "Gutkowski - Hayes" : 1, "Kihn LLC" : 1, "Muller, Glover and Padberg" : 1, "Pouros Group" : 1, "Hermann, Stroman and Dach" : 1 }"`;
-
-exports[`facets should return workingSQL fragments 2`] = `"{ "12" : 7, "24" : 6, "13" : 6, "14" : 5, "27" : 5, "29" : 4, "31" : 4, "22" : 4, "19" : 4, "17" : 4, "38" : 4, "25" : 4, "23" : 3, "36" : 3, "32" : 3, "26" : 3, "30" : 3, "37" : 3, "28" : 3, "16" : 2 }"`;
+exports[`facets should return workingSQL fragments 2`] = `
+{
+  "12": 7,
+  "13": 6,
+  "14": 5,
+  "19": 4,
+  "22": 4,
+  "24": 6,
+  "27": 5,
+  "29": 4,
+  "31": 4,
+  "38": 4,
+}
+`;

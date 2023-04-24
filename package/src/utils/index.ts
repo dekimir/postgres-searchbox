@@ -1,4 +1,5 @@
 import { z } from 'zod';
+export * from './pg.js';
 
 /**
  * @description
@@ -99,15 +100,11 @@ export function implement<Model = never>() {
 }
 
 /**
- * undefinedOrIn
+ * isIn
  * Used in e.g. schema refinement to check if a client value is in a list of valid values.
  */
 
-export const undefinedOrIn = (
-  val: string | readonly string[] | undefined,
-  array: string[]
-) => {
-  if (!val) return true;
+export const isIn = (val: string | readonly string[], array: string[]) => {
   if (typeof val === 'string') return array.includes(val);
   return val.every((v) => array.includes(v));
 };

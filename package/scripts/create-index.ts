@@ -28,6 +28,9 @@ export async function createColumnAndIndex({
   client.connect();
   // Get column names
   const columnNames = await getTextColumnsFromTable({ tableName });
+  if (!columnNames?.length) {
+    throw 'Found no text columns in createColumnAndIndex > getTextColumnsFromTable';
+  }
   // Previously this had an extra || ' ' on the end? Was it needed or a typo?
   const valExpr = columnNames
     .map((c) => format(`COALESCE(%I, '')`, c))
@@ -78,7 +81,8 @@ export async function dropColumnAndIndex({ tableName }: { tableName: string }) {
 
 /**
  * Run the script when called from package.json
- * Self init functions because they are async.
+ * Self init functions because top-level await is
+ * un-supported in node < v14.8.0.
  */
 
 const errorString = `
