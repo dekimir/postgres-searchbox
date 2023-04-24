@@ -13,7 +13,8 @@ import type {
 const client = getClient();
 
 export const getSearchHandler =
-  (configs?: Handler.Configs) => (req: Handler.Req, res: Handler.Res) => {
+  (configs?: Handler.Config | Handler.Configs) =>
+  (req: Handler.Req, res: Handler.Res) => {
     searchHandler(req, res, configs);
   };
 

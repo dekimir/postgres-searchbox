@@ -115,6 +115,7 @@ The following components should work.:
 - Pagination
 - SortBy
 - Highlight
+- DynamicWidgets
 
 Sorting by columns is supported. Use the syntax `?column_name(+asc|+desc)?(+nulls+last)?,column_name_2(+asc|+desc)...`.
 
@@ -137,24 +138,127 @@ The Highlight widget works, only because it does not use _all properties_ of the
 If you use a custom UI that relies on properties `{ matchedWords, matchLevel, fullyHighlighted }` then it wont
 work correctly. See the issue https://github.com/dekimir/postgres-searchbox/issues/8
 
-Highlight requires some config to work correctly.
+Highlight requires some config to work correctly. See Configuring section or a full explanation.
 
 ```javascript pages/search.tsx
-const client = make_client('api/search', {
-  highlightColumns: ['column_name_here', 'column_2'],
-});
+const client = make_client('api/search');
 // ...
-<Highlight hit={hit} attribute="primarytitle" className="Hit-label" />;
+<Highlight hit={hit} attribute="column_name_here" className="Hit-label" />;
 ```
 
 ```javascript pages/api/search.ts
 import { getSearchHandler } from 'postgres-searchbox';
 export default getSearchHandler([
   {
-    tableName: 'table_name_here',
-    validHighlightColumns: ['column_name_here', 'column_2'],
+    indexName: 'table_name_here',
+    settings: {
+      attributesToHighlight: ['column_name_here'],
+    },
   },
 ]);
+```
+
+## Configuring
+
+There are two ways to configure the behavior of postgres-searchbox: server-side and client-side.
+You can get started with zero-config, but configuring will alow for a faster and more secure setup.
+
+Important terminology. With instantsearch, Algolia have used terms that don't exactly translate to Postgres or SQL
+
+- indexName means the source of the search results, this is the Postgres table name.
+- attribute means a value associated with a search result, e.g. id, name, url etc.
+  it's similar to a column value but it's not an exact translation,
+  for example in Postgres a search results attribute could be in a different table.
+  For now, postgres-searchbox does not work with cross-table attributes.
+- facets, these are the attribute keys like color, price etc. In Postgres, they're column names.
+
+### Server side
+
+The default server-side config is at [/package/src/constants.ts]. The defaults are fine during development,
+but they fetch all attributes as facets and return all attributes in the search response.
+
+The defaults should not be used in production for 2 reasons.
+
+1. Security. You may be exposing data that should not leave the server.
+1. Performance. Returning all attributes in an extra load on the server and network.
+
+This can be addressed by explicitly setting `attributesToRetrieve` when instantiating getSearchHandler like:
+
+```javascript pages/api/search.ts
+import { getSearchHandler } from 'postgres-searchbox';
+export default getSearchHandler({
+  settings: { attributesToRetrieve: ['name'] },
+});
+```
+
+The settings property map directly to
+[Algolia Settings API Parameters](https://www.algolia.com/doc/api-reference/settings-api-parameters/),
+but are only a subset of Algolia. They can be set with type-safety and autofill `ctrl + space` in VSCode.
+
+If your searchHandler should handle multiple indexes, instead of passing one config object you can pass in an
+array of configs like this. Make sure to set the indexName property for each config.
+
+```javascript pages/api/search.ts
+[
+  {
+    indexName: 'postgres_searchbox_movies',
+  },
+  {
+    indexName: 'bestbuy_product',
+    settings: { attributesToRetrieve: ['name'] },
+  },
+];
+```
+
+Sometimes server-side config is not flexible enough, maybe you have an app and website hitting the same endpoint.
+And, the app and website need different attributes.
+In this case, use the client config as explained below, but set some server-side validation with the
+clientValidation property.
+
+```javascript pages/api/search.ts
+export default getSearchHandler({
+  clientValidation: {
+    validAttributesToRetrieve: [
+      'id',
+      'name',
+      'price',
+      'description',
+      'mobile_column',
+      'web_column',
+    ],
+    validAttributesToHighlight: ['column_name_here', 'column_2', 'column_3'],
+  },
+});
+```
+
+### Client side
+
+The client-side options map directly to
+[Algolia Search API Parameters](https://www.algolia.com/doc/api-reference/search-api-parameters/),
+but are only a subset of Algolia.
+
+They can be set with type-safety and autofill.
+
+```javascript pages/search.tsx
+import { Configure } from 'react-instantsearch-hooks-web';
+import { make_client } from 'postgres-searchbox/client';
+import type { SearchOptions } from 'postgres-searchbox/client.types';
+const client = make_client('api/search');
+const configureProps: SearchOptions = {
+  validAttributesToRetrieve: [
+    'id',
+    'name',
+    'price',
+    'description',
+    'web_column',
+  ],
+  attributesToHighlight: ['column_name_here', 'column_2'],
+};
+<InstantSearch searchClient={client} indexName="table_name_here">
+  <Configure {...configureProps} />
+  <SearchBox />
+  <Hits hitComponent={Hit} />
+</InstantSearch>;
 ```
 
 # Limitations

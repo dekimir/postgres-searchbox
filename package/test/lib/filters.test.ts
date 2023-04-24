@@ -46,9 +46,6 @@ describe('filters', () => {
       ],
     });
 
-    // TODO
-    console.log(returnValue);
-
-    // expect(returnValue?.db?.whereFormatted).toMatchSnapshot();
+    expect(returnValue?.db?.formatted).toMatchSnapshot();
   });
 });
