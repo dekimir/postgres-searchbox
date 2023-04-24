@@ -53,7 +53,7 @@ Here is how you can make your Postgres data searchable in three easy steps:
 
 ## Create a Search Index for Your Postgres Table
 
-Install the package and peer dependencies to your project with `yarn add postgres-searchbox`.
+Install the package to your project with `yarn add postgres-searchbox`.
 
 `postgres-searchbox` includes a script that can generate the SQL commands for creating a search index on the table
 you want to search. The script is at `scripts/create-index.js`; it reads the table definition and creates a search
