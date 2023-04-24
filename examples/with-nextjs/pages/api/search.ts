@@ -12,6 +12,13 @@ export default getSearchHandler([
     indexName: 'bestbuy_product',
     // Settings https://www.algolia.com/doc/api-reference/settings-api-parameters/
     settings: {
+      attributesToRetrieve: [
+        'name',
+        'image',
+        'description',
+        'price',
+        'objectid',
+      ],
       attributesForFaceting: [
         'brand',
         'hierarchicalCategorieslvl0',
