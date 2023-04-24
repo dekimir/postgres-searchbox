@@ -1,31 +1,20 @@
 import Head from 'next/head';
-import Image from 'next/image';
-import { Inter } from 'next/font/google';
-import styles from '@/styles/Home.module.css';
 import {
   useConnector,
   InstantSearch,
-  Breadcrumb,
   Configure,
-  ClearRefinements,
-  CurrentRefinements,
   DynamicWidgets,
   HierarchicalMenu,
   Highlight,
   Hits,
   HitsPerPage,
-  InfiniteHits,
-  Menu,
   Pagination,
-  RangeInput,
   RefinementList,
-  PoweredBy,
   SearchBox,
   SortBy,
   ToggleRefinement,
 } from 'react-instantsearch-hooks-web';
 import connectStats from 'instantsearch.js/es/connectors/stats/connectStats';
-import type { UiState } from 'instantsearch.js';
 import type {
   StatsConnectorParams,
   StatsWidgetDescription,
@@ -44,20 +33,30 @@ const client = make_client('api/search');
 function Hit({ hit }: { hit: any }) {
   return (
     <article>
+      <img src={`${hit.image};maxHeight=120;maxWidth=120`} alt="" />
       <h1>
-        <Highlight hit={hit} attribute="primarytitle" className="Hit-label" />
+        {/* {hit.name} */}
+        <Highlight hit={hit} attribute="name" className="Hit-label" />
       </h1>
       <p>
-        {hit.titletype}, {hit.startyear}, {hit.runtimeminutes} min
+        {hit.description}
+        <Highlight hit={hit} attribute="description" className="Hit-label" />
       </p>
-      <p>{hit.genres}</p>
+      <p>{hit.price}</p>
+      <p>{hit.objectID}</p>
     </article>
   );
 }
 
 export default function Basic() {
-  const configureProps: SearchOptions = {
-    attributesToHighlight: ['primarytitle'],
+  const configureProps: SearchOptions = {};
+
+  // Using only items
+  const transformItems = (items) => {
+    return items.map((item) => ({
+      ...item,
+      objectID: item.objectid,
+    }));
   };
 
   return (
@@ -68,53 +67,51 @@ export default function Basic() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <InstantSearch
-        searchClient={client}
-        indexName="postgres_searchbox_movies"
-      >
+      <InstantSearch searchClient={client} indexName="bestbuy_product">
         <Configure {...configureProps} />
         <div className="Container">
           <div>
-            <DynamicWidgets fallbackComponent={FallbackComponent} />
+            <DynamicWidgets fallbackComponent={FallbackComponent}>
+              <HierarchicalMenu
+                attributes={[
+                  'hierarchicalCategorieslvl0',
+                  'hierarchicalCategorieslvl1',
+                  'hierarchicalCategorieslvl2',
+                  'hierarchicalCategorieslvl3',
+                  'hierarchicalCategorieslvl4',
+                ]}
+              />
+              <ToggleRefinement attribute="free_shipping" />
+            </DynamicWidgets>
           </div>
           <div className="Search">
             <SearchBox placeholder="Search" autoFocus defaultValue="test" />
 
             <div className="Search-header">
               <Stats />
-              <PoweredBy />
               <HitsPerPage
                 items={[
                   { label: '20 hits per page', value: 20, default: true },
-                  { label: '40 hits per page', value: 40 },
+                  { label: '100 hits per page', value: 100 },
                 ]}
               />
               <SortBy
                 items={[
-                  { label: 'Relevance', value: 'postgres_searchbox_movies' },
+                  { label: 'Relevance', value: 'bestbuy_product' },
                   {
-                    label: 'Title (asc)',
-                    value: 'postgres_searchbox_movies?sort=primarytitle',
+                    label: 'Lowest Price',
+                    value: 'bestbuy_product?sort=price+asc',
                   },
                   {
-                    label: 'Title (desc)',
-                    value: 'postgres_searchbox_movies?sort=primarytitle+desc',
-                  },
-                  {
-                    label: 'Start year (asc)',
-                    value: 'postgres_searchbox_movies?sort=startyear+asc',
-                  },
-                  {
-                    label: 'Start year (desc)',
-                    value:
-                      'postgres_searchbox_movies?sort=startyear+desc+nulls+last',
+                    label: 'Highest Price',
+                    value: 'bestbuy_product?sort=price+desc+nulls+last',
                   },
                 ]}
               />
               {/* <Refresh /> */}
             </div>
 
-            <InfiniteHits hitComponent={Hit} />
+            <Hits hitComponent={Hit} transformItems={transformItems} />
             <Pagination className="Pagination" />
           </div>
         </div>
