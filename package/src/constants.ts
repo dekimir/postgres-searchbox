@@ -24,7 +24,7 @@ const defaultSettings: Required<Settings> = {
   hitsPerPage: 20,
   paginationLimitedTo: MAX_HITS_TOTAL,
   // * Performance
-  numericAttributesForFiltering: [],
+  numericAttributesForFiltering: ['*'],
   // * Advanced
   maxFacetHits: 100,
   renderingContent: {

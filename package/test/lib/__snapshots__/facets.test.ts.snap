@@ -29,3 +29,12 @@ exports[`facets should return workingSQL fragments 2`] = `
   "38": 4,
 }
 `;
+
+exports[`facets should return workingSQL fragments 3`] = `
+{
+  "avg": 23.81,
+  "max": 40,
+  "min": 10,
+  "sum": 2381,
+}
+`;

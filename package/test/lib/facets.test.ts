@@ -26,8 +26,8 @@ describe('facets', () => {
   });
 
   afterAll(async () => {
-    const dropSql = format('DROP TABLE IF EXISTS %I', tableName);
-    await client.query(dropSql);
+    // const dropSql = format('DROP TABLE IF EXISTS %I', tableName);
+    // await client.query(dropSql);
     await client.end();
   });
 
@@ -42,12 +42,15 @@ describe('facets', () => {
     const facets = await getFacets({
       ...defaults.settings,
       facets: ['brand', 'price'],
+      numericAttributesForFiltering: ['price'],
     });
 
-    const { cte, json } = facets?.db || {};
+    const { cte, statsCte, json, statsJson } = facets?.db || {};
 
     expect(typeof cte).toBe('string');
+    expect(typeof statsCte).toBe('string');
     expect(typeof json).toBe('string');
+    expect(typeof statsJson).toBe('string');
 
     /**
      * Minimal example of the main SQL query in index.ts
@@ -63,17 +66,22 @@ describe('facets', () => {
         SELECT * FROM all_selection LIMIT 10
       ),
       -- Step 2: Get the counts for each facet
-      ${cte}
-      -- Step 3: Return it all as a JSON object
+      ${cte},
+      -- Step 3: Get facets_stats on numeric attributes
+      ${statsCte}
+      -- Step 4: Return it all as a JSON object
       SELECT json_build_object(
         'totalHits', ( SELECT count(*) FROM all_selection ),
         'hits', jsonb_agg(hits_selection.*)::json,
-        ${json}
+        ${json},
+        ${statsJson}
       ) AS "json"
       FROM hits_selection
     )`,
       tableName
     );
+
+    // console.log(formattedSql);
 
     const result = await client.query(formattedSql);
 
@@ -82,5 +90,6 @@ describe('facets', () => {
     expect(result.rows[0].json.hits).toHaveLength(10);
     expect(result.rows[0].json.facets.brand).toMatchSnapshot();
     expect(result.rows[0].json.facets.price).toMatchSnapshot();
+    expect(result.rows[0].json.facets_stats.price).toMatchSnapshot();
   });
 });

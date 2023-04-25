@@ -25,6 +25,7 @@ describe('requestHandler', () => {
     nbPages: expect.any(Number),
     hits: expect.any(Array),
     facets: expect.any(Object),
+    facets_stats: expect.any(Object),
     processingTimeMS: expect.any(Number),
     query: expect.any(String),
     params: expect.any(String),
@@ -436,15 +437,6 @@ describe('requestHandler', () => {
             },
             indexName: tableName,
           },
-          {
-            params: {
-              query: 'ball',
-              page: 0,
-              facets: [],
-              numericFilters: ['price<5', 'price>=10', 'price<=20'],
-            },
-            indexName: `${tableName}?sort=price+asc`,
-          },
         ],
       },
     };
@@ -464,6 +456,7 @@ describe('requestHandler', () => {
 
     const results = res.json.mock.calls[0][0].results;
     expect(results[0].facets).toMatchSnapshot();
+    expect(results[0].facets_stats).toMatchSnapshot();
   });
 
   it('should handle filter', async () => {

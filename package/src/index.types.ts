@@ -105,7 +105,7 @@ export namespace Inferred {
 
 export interface DatabaseHit {
   // object with many possible types
-  [key: string]: string | number | boolean | null;
+  [key: string]: string | number | boolean | null | undefined;
 }
 
 export interface DatabaseResult {
@@ -116,6 +116,14 @@ export interface DatabaseResult {
       facets: {
         [key: string]: {
           [key: string]: number;
+        };
+      };
+      facets_stats: {
+        [key: string]: {
+          min: number;
+          max: number;
+          avg: number;
+          sum: number;
         };
       };
     };
@@ -136,7 +144,7 @@ export type Hit = {
     };
   };
 } & {
-  [key: string]: string | number | boolean | null;
+  [key: string]: string | number | boolean | null | undefined;
 };
 
 export type SearchResponse = Pick<

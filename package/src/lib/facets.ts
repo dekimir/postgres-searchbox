@@ -15,6 +15,7 @@ export const getFacets = async ({
   sortFacetValuesBy,
   maxFacetHits,
   renderingContent,
+  numericAttributesForFiltering,
 }: Props): Promise<GetFacetsReturn> => {
   // Build facets based on 2 conditionals
   const facets: readonly string[] =
@@ -44,7 +45,7 @@ export const getFacets = async ({
               WHERE %s IS NOT NULL
               GROUP by %s
               ORDER BY ${
-                sortFacetValuesBy === 'count' ? `count(%L) DESC` : `%s ASC`
+                sortFacetValuesBy === 'count' ? `count(*) DESC` : `%s ASC`
               } 
               LIMIT ${limit}
             ) t
@@ -52,6 +53,32 @@ export const getFacets = async ({
       `,
         `${facet}_selection`,
         facet,
+        facet,
+        facet,
+        facet,
+        facet
+      )
+    )
+    .join(',');
+
+  const statsCte = numericAttributesForFiltering
+    ?.filter((f) => f !== '*')
+    .map((facet) =>
+      format(
+        /* sql */ `
+        %I AS (
+          SELECT 
+              json_build_object( 
+                'max', MAX (%I::numeric), 
+                'min', MIN(%I::numeric), 
+                'avg', round( AVG(%I::numeric), 4), 
+                'sum', SUM(%I::numeric)
+              ) 
+          FROM all_selection
+          WHERE %I IS NOT NULL 
+        )
+      `,
+        `${facet}_stats`,
         facet,
         facet,
         facet,
@@ -70,6 +97,16 @@ export const getFacets = async ({
         .join(',')}
     )`;
 
+  const statsJson = /* sql */ `
+    'facets_stats', json_build_object(
+      ${numericAttributesForFiltering
+        ?.filter((f) => f !== '*')
+        .map((facet) =>
+          format(`%L, (SELECT * FROM %I)`, facet, `${facet}_stats`)
+        )
+        .join(',')}
+    )`;
+
   const order = renderingContent?.facetOrdering?.facets?.order;
   const values = renderingContent?.facetOrdering?.values;
 
@@ -80,7 +117,7 @@ export const getFacets = async ({
   }
 
   return {
-    db: { cte, json },
+    db: { cte, statsCte, json, statsJson },
     renderingContent: {
       ...renderingContent,
       facetOrdering: {

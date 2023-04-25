@@ -132,10 +132,18 @@ const handleRequest = async (
     pick(paramsWithSettings, ['page', 'hitsPerPage', 'length', 'offset'])
   );
 
-  if (paramsWithSettings.attributesForFaceting.includes('*')) {
-    const result = await client.query(lib.getAttributes(table).db.formatted);
-    paramsWithSettings.attributesForFaceting = result.rows[0].columns;
-  }
+  const attributes = await lib.getAttributes({
+    client,
+    table,
+    ...pick(paramsWithSettings, [
+      'attributesForFaceting',
+      'numericAttributesForFiltering',
+    ]),
+  });
+
+  attributes?.new.forEach(([key, value]) => {
+    paramsWithSettings[key] = value;
+  });
 
   const facets = await lib.getFacets(
     pick(paramsWithSettings, [
@@ -145,6 +153,7 @@ const handleRequest = async (
       'sortFacetValuesBy',
       'maxFacetHits',
       'renderingContent',
+      'numericAttributesForFiltering',
     ])
   );
 
@@ -196,9 +205,12 @@ const handleRequest = async (
       LIMIT %s
     )
     --
-    -- Step 3: Get the counts for each facet
+    -- Step 3: Additional CTEs for facets
+    -- 3a: Get the counts for each facet
+    -- 3b: Get facets_stats on numeric attributes
     --
     ${facets?.db?.cte ? `, ${facets.db.cte}` : ''}
+    ${facets?.db?.statsCte ? `, ${facets.db.statsCte}` : ''}
     --
     -- Step 4: Return it all as a JSON object
     -- 4a. totalHits and hits are always returned
@@ -209,6 +221,7 @@ const handleRequest = async (
       'totalHits', ( SELECT count(*) FROM all_selection ),
       'hits', jsonb_agg(hits_selection.*)::jsonb
       ${facets?.db?.json ? `, ${facets.db.json}` : ''}
+      ${facets?.db?.statsJson ? `, ${facets.db.statsJson}` : ''}
     ) AS "json"
     FROM hits_selection
   )`,
@@ -224,7 +237,12 @@ const handleRequest = async (
   // console.log(formattedSql);
 
   const result: DatabaseResult = await client.query(formattedSql);
-  const { hits, totalHits, facets: dbFacets } = result.rows[0].json;
+  const {
+    hits,
+    totalHits,
+    facets: dbFacets,
+    facets_stats,
+  } = result.rows[0].json;
 
   /**
    * Update results
@@ -260,6 +278,7 @@ const handleRequest = async (
       res: pagination.res,
     }),
     ...(dbFacets && { facets: dbFacets }),
+    ...(facets_stats && { facets_stats }),
     processingTimeMS: timeTaken,
     ...(facets?.renderingContent && {
       renderingContent: facets.renderingContent,

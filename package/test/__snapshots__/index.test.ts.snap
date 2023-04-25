@@ -53,6 +53,17 @@ exports[`requestHandler should return facets on request with empty query 1`] = `
 }
 `;
 
+exports[`requestHandler should return facets on request with empty query 2`] = `
+{
+  "price": {
+    "avg": 24.5933,
+    "max": 40,
+    "min": 10,
+    "sum": 3689,
+  },
+}
+`;
+
 exports[`requestHandler should return results 1`] = `
 {
   "brand": "Powlowski, Brekke and Hamill",

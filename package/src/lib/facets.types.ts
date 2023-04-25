@@ -12,12 +12,15 @@ export interface Props {
   sortFacetValuesBy: Required<Settings>['sortFacetValuesBy'];
   maxFacetHits: Required<Settings>['maxFacetHits'];
   renderingContent: Required<Settings>['renderingContent'];
+  numericAttributesForFiltering: Required<Settings>['numericAttributesForFiltering'];
 }
 
 export type GetFacetsReturn = {
   db: {
     cte: string;
+    statsCte: string;
     json: string;
+    statsJson: string;
   };
   renderingContent: Required<Settings>['renderingContent'];
 } | null;
