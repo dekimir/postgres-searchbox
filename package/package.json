@@ -22,7 +22,7 @@
     "script:drop-index": "PG_SB_DROP_COL_AND_INDEX=true ts-node-esm scripts/create-index.ts",
     "script:create-movies": "PG_SB_CREATE_MOVIES=true ts-node-esm ./scripts/create-movies.ts",
     "script:drop-movies": "PG_SB_DROP_MOVIES=true ts-node-esm ./scripts/create-movies.ts",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --forceExit",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --watchAll"
   },
   "repository": {
