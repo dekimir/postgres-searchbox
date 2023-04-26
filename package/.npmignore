@@ -5,6 +5,5 @@
 .env.*
 *.env.*
 jest.*
-node_modules
 coverage
 test

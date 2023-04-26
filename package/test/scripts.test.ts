@@ -1,3 +1,4 @@
+import { exec } from 'child_process';
 import pkg from 'pg';
 const { Client } = pkg;
 import format from 'pg-format';
@@ -10,6 +11,10 @@ import {
   createColumnAndIndex,
   dropColumnAndIndex,
 } from '@scripts/create-index.js';
+import {
+  CREATE_COL_INDEX_SUCCESS,
+  DROP_COL_INDEX_SUCCESS,
+} from '@scripts/constants.js';
 
 /**
  * This file is just for testing the functions in the scripts folder
@@ -80,7 +85,7 @@ describe('scripts', () => {
     await createColumnAndIndex({ tableName });
 
     // Test the vector column exists
-    const columnSql = format('SELECT * FROM %I', tableName);
+    const columnSql = format('SELECT * FROM %I LIMIT 1', tableName);
     const data = await client.query(columnSql);
     expect(data.rows[0][VECTOR_COLUMN]).toBeDefined();
     // Test that the column has a tsvector value
@@ -112,6 +117,82 @@ describe('scripts', () => {
     const data = await client.query(columnSql);
     expect(data.rows[0][VECTOR_COLUMN]).toBeUndefined();
 
+    // Test the index does not exist
+    const indexSql = format(
+      'SELECT * FROM pg_indexes WHERE tablename = %L AND indexname = %L',
+      tableName,
+      `${INDEX_PREFIX}${tableName}`
+    );
+    const indexData = await client.query(indexSql);
+    expect(indexData.rows.length).toBe(0);
+  });
+
+  /**
+   * CLI commands
+   * - create-index
+   * - drop-index
+   */
+
+  it('should create via cli command', async () => {
+    // Prerequisites
+    await initTestDatabase(initTestDatabaseParams);
+
+    const val = await new Promise(async (resolve, reject) => {
+      exec(
+        `PG_SB_TABLE_NAME=${tableName} yarn script:create-index`,
+        (error, stdout, stderr) => {
+          if (stdout.includes(CREATE_COL_INDEX_SUCCESS)) resolve(true);
+          if (error !== null) reject(error);
+          if (stderr?.length > 0) reject(stderr);
+        }
+      );
+    });
+
+    if (val !== true) {
+      console.log(`exec error: ${val}`);
+      return expect(val).toBe(true);
+    }
+
+    // Test the vector column exists
+    const columnSql = format('SELECT * FROM %I LIMIT 1', tableName);
+    const data = await client.query(columnSql);
+    expect(data.rows[0][VECTOR_COLUMN]).toBeDefined();
+    // Test the index exists
+    const indexSql = format(
+      'SELECT * FROM pg_indexes WHERE tablename = %L AND indexname = %L',
+      tableName,
+      `${INDEX_PREFIX}${tableName}`
+    );
+    const indexData = await client.query(indexSql);
+    expect(indexData.rows.length).toBe(1);
+    // Test the index is a gin index
+    expect(indexData.rows[0].indexdef).toContain('USING gin');
+  }, 20_000);
+
+  it('should drop  via cli command', async () => {
+    await initTestDatabase(initTestDatabaseParams);
+    await createColumnAndIndex({ tableName });
+
+    const val = await new Promise(async (resolve, reject) => {
+      exec(
+        `PG_SB_TABLE_NAME=${tableName} yarn script:drop-index`,
+        (error, stdout, stderr) => {
+          if (stdout.includes(DROP_COL_INDEX_SUCCESS)) resolve(true);
+          if (error !== null) reject(error);
+          if (stderr?.length > 0) reject(stderr);
+        }
+      );
+    });
+
+    if (val !== true) {
+      console.log(`exec error: ${val}`);
+      return expect(val).toBe(true);
+    }
+
+    // Test the vector column does not exist
+    const columnSql = format('SELECT * FROM %I LIMIT 1', tableName);
+    const data = await client.query(columnSql);
+    expect(data.rows[0][VECTOR_COLUMN]).toBeUndefined();
     // Test the index does not exist
     const indexSql = format(
       'SELECT * FROM pg_indexes WHERE tablename = %L AND indexname = %L',
