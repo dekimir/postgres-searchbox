@@ -18,7 +18,7 @@
     "build": "yarn clean && tsc --project tsconfig.build.json && yarn bundle-types",
     "bundle-types": "dts-bundle-generator --config dbg.config.cjs",
     "clean": "rimraf build/",
-    "dev": "yarn clean && swc src -w --out-dir build",
+    "dev": "swc src -w --out-dir build",
     "script:create-index": "PG_SB_CREATE_COL_AND_INDEX=true ts-node-esm scripts/create-index.ts",
     "script:drop-index": "PG_SB_DROP_COL_AND_INDEX=true ts-node-esm scripts/create-index.ts",
     "script:create-movies": "PG_SB_CREATE_MOVIES=true ts-node-esm ./scripts/create-movies.ts",

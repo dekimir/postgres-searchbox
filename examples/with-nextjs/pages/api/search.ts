@@ -38,7 +38,6 @@ export default getSearchHandler([
             order: [
               'brand',
               'hierarchicalCategorieslvl0',
-              'categories',
               'price',
               'free_shipping',
               'rating',

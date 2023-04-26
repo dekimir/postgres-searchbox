@@ -9,6 +9,7 @@ import {
   Hits,
   HitsPerPage,
   Pagination,
+  RangeInput,
   RefinementList,
   SearchBox,
   SortBy,
@@ -73,16 +74,34 @@ export default function Basic() {
         <div className="Container">
           <div>
             <DynamicWidgets fallbackComponent={FallbackComponent}>
-              <HierarchicalMenu
-                attributes={[
-                  'hierarchicalCategorieslvl0',
-                  'hierarchicalCategorieslvl1',
-                  'hierarchicalCategorieslvl2',
-                  'hierarchicalCategorieslvl3',
-                  'hierarchicalCategorieslvl4',
-                ]}
-              />
-              <ToggleRefinement attribute="free_shipping" />
+              <Panel header="Brands">
+                <RefinementList
+                  attribute="brand"
+                  showMore={true}
+                  searchable={true}
+                  searchablePlaceholder="Type a brand"
+                />
+              </Panel>
+              <Panel header="Hierarchy">
+                <HierarchicalMenu
+                  attributes={[
+                    'hierarchicalCategorieslvl0',
+                    'hierarchicalCategorieslvl1',
+                    'hierarchicalCategorieslvl2',
+                    'hierarchicalCategorieslvl3',
+                    'hierarchicalCategorieslvl4',
+                  ]}
+                />
+              </Panel>
+              <Panel header="Price">
+                <RangeInput attribute="price" />
+              </Panel>
+              <Panel header="Free Shipping">
+                <ToggleRefinement
+                  attribute="free_shipping"
+                  label="Free shipping"
+                />
+              </Panel>
             </DynamicWidgets>
           </div>
           <div className="Search">

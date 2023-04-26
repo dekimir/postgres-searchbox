@@ -1,5 +1,7 @@
 import type { AlgoliaSearchOptions } from './bundle.types.js';
 
+export { Hit } from './index.types.js';
+
 // These are in the same order as the Algolia docs
 // https://www.algolia.com/doc/api-reference/search-api-parameters/
 
@@ -46,6 +48,8 @@ export type SearchOptions = Pick<
   // * Faceting
   // Custom because it can be a string or an array
   facets?: AlgoliaSearchOptions['facets'] | string;
+  // * FacetQuery
+  facetQuery?: string;
 };
 
 export type ClientValidation = {

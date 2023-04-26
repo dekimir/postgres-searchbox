@@ -55,6 +55,8 @@ export const SearchOptionsSchema = implement<SearchOptions>().with({
   // * Advanced
   // * ✅ 1/14 🛑
   maxFacetHits: z.number().optional(),
+  // * FacetQuery
+  facetQuery: z.string().optional(),
 });
 
 /**
@@ -77,6 +79,9 @@ export const IndexName = z
 const RequestSchemaInitial = z.object({
   indexName: IndexName,
   params: z.any(),
+  // For facet searches
+  facet: z.string().optional(),
+  type: z.literal('facet').optional(),
 });
 
 export const initialValidation = (payload: any) => {
@@ -94,8 +99,11 @@ export type RequestInitial = z.infer<typeof RequestSchemaInitial>;
  */
 
 const RequestSchema = z.object({
-  params: SearchOptionsSchema,
   indexName: IndexName,
+  params: SearchOptionsSchema,
+  // For facet searches
+  facet: z.string().optional(),
+  type: z.literal('facet').optional(),
 });
 
 export const validatePayload = (
@@ -114,6 +122,11 @@ export const validatePayload = (
     maxOffset,
     maxLength,
   } = clientValidation;
+
+  /**
+   * Depending on the type use a different schema for params
+   * facet type also has 2 additional properties.
+   */
 
   const RequestSchemaRefined = RequestSchema.refine(
     ({ params: { attributesToRetrieve } }) =>
@@ -180,7 +193,12 @@ export const validatePayload = (
           return validFacetFilters.includes(attribute) && !!operator && !!value;
         })
         .every((v) => v);
-    }, 'Invalid numericFilters');
+    }, 'Invalid numericFilters')
+    .refine(({ type, facet, params: { facetQuery } }) => {
+      console.log({ type, facetQuery, facet });
+      if (type !== 'facet') return true;
+      return facet?.length && facetQuery;
+    }, 'Invalid facet search');
 
   return RequestSchemaRefined.safeParse(request);
 };

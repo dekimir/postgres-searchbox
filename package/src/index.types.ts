@@ -169,3 +169,14 @@ export type SearchResponse = Pick<
 > & {
   hits: Hit[];
 };
+
+export type FacetHit = {
+  highlighted: string;
+  [key: string]: string;
+} & {
+  count: number;
+};
+
+export interface FacetsSearchResponse {
+  facetHits: FacetHit[];
+}

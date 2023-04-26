@@ -8,6 +8,8 @@ import type {
   Inferred,
   DatabaseResult,
   SearchResponse,
+  FacetHit,
+  FacetsSearchResponse,
 } from './index.types.js';
 
 const client = getClient();
@@ -44,7 +46,7 @@ export async function searchHandler(
    * Loop the requests and handle them individually
    */
 
-  const resultsPromises: Promise<SearchResponse>[] = [];
+  const resultsPromises: Promise<SearchResponse | FacetsSearchResponse>[] = [];
 
   for (const request of parsed.data.requests) {
     // Indexname without the sort order query param
@@ -53,8 +55,12 @@ export async function searchHandler(
     const config = Array.isArray(configs)
       ? configs?.find((config) => config.indexName === indexName)
       : configs;
-    // Handle the request & push it to the promises array
-    resultsPromises.push(handleRequest(request, config));
+    if (request.type === 'facet' && typeof request.facet === 'string') {
+      resultsPromises.push(handleFacetSearch(request, config));
+    } else {
+      // Handle the request & push it to the promises array
+      resultsPromises.push(handleRequest(request, config));
+    }
   }
 
   // Catch any errors and return them
@@ -288,6 +294,118 @@ const handleRequest = async (
     params: paramsString,
     exhaustiveFacetsCount: true,
     exhaustiveNbHits: true,
+  };
+};
+
+const handleFacetSearch = async (
+  request: Inferred.RequestInitial,
+  config?: Handler.Config
+): Promise<FacetsSearchResponse> => {
+  /**
+   * Validate
+   */
+
+  // Merge the user's config.clientValidation & default clientValidation
+  const clientValidation = {
+    ...defaults.clientValidation,
+    ...config?.clientValidation,
+  };
+
+  // Merge the user's config.settings & default settings
+  const settings = { ...defaults.settings, ...config?.settings };
+
+  // Validate the request against clientValidation parameters
+  const parsed = validate.payload(request, clientValidation, settings);
+
+  // If invalid, return error
+  if (!parsed.success) {
+    // console.error(parsed.error.issues);
+    throw parsed.error;
+  }
+
+  /**
+   * Define constants and merge settings with params
+   */
+
+  const { indexName, params, facet } = parsed.data;
+  const { query, facetQuery } = params;
+  const paramsWithSettings = { ...settings, ...params };
+
+  /**
+   * Lib functions
+   */
+
+  const { table } = lib.getTableAndSort(indexName);
+
+  const attributes = await lib.getAttributes({
+    client,
+    table,
+    ...pick(paramsWithSettings, [
+      'attributesForFaceting',
+      'numericAttributesForFiltering',
+    ]),
+  });
+
+  attributes?.new.forEach(([key, value]) => {
+    paramsWithSettings[key] = value;
+  });
+
+  const filters = await lib.getFilters(
+    pick(paramsWithSettings, [
+      'facetFilters',
+      'numericFilters',
+      'attributesForFaceting',
+      'numericAttributesForFiltering',
+      'maxFacetHits',
+    ])
+  );
+
+  /**
+   * Database query
+   */
+
+  const formattedSql = format(
+    /* sql */ `(
+    --
+    -- Step 1: Get all the results
+    --
+    WITH all_selection AS (
+      SELECT *
+      FROM %I
+      WHERE
+        ( ( %I @@ websearch_to_tsquery(%L) AND %L <> '' )  OR %L = '' )
+        ${filters?.db.formatted ? ` AND ${filters?.db.formatted}` : ``}
+    )
+    --
+    -- Step 2: Do a basic ILIKE search on the facet
+    --
+    SELECT 
+      %I, count(*)::int4 AS count, regexp_replace(%I, %L,  %L, 'gi') AS highlighted
+    FROM all_selection
+    WHERE %I ILIKE %L
+    GROUP by %I 
+    ORDER BY count(*) DESC
+    LIMIT 20
+  )`,
+    table,
+    VECTOR_COLUMN,
+    query,
+    query,
+    query,
+    // facet part
+    facet,
+    facet,
+    facetQuery,
+    `${paramsWithSettings.highlightPreTag}${facetQuery}${paramsWithSettings.highlightPostTag}`,
+    facet,
+    `%${facetQuery}%`,
+    facet
+  );
+
+  const result = await client.query(formattedSql);
+
+  return {
+    facetHits: result.rows as FacetHit[],
   };
 };
 
