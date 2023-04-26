@@ -195,7 +195,6 @@ export const validatePayload = (
         .every((v) => v);
     }, 'Invalid numericFilters')
     .refine(({ type, facet, params: { facetQuery } }) => {
-      console.log({ type, facetQuery, facet });
       if (type !== 'facet') return true;
       return facet?.length && facetQuery;
     }, 'Invalid facet search');

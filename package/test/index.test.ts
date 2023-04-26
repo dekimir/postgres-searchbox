@@ -78,10 +78,7 @@ describe('requestHandler', () => {
         requests: [{ params: { query }, indexName: tableName }],
       },
     };
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-    };
+
     await searchHandler(req, res);
 
     // Test status and json are called
@@ -106,11 +103,6 @@ describe('requestHandler', () => {
     // Prerequisites
     await initTestDatabase(initTestDatabaseParams);
     await createColumnAndIndex({ tableName });
-
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-    };
 
     /**
      * Page 1
@@ -157,11 +149,6 @@ describe('requestHandler', () => {
     // Prerequisites
     await initTestDatabase(initTestDatabaseParams);
     await createColumnAndIndex({ tableName });
-
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-    };
 
     const req = {
       body: {
@@ -352,11 +339,6 @@ describe('requestHandler', () => {
     await initTestDatabase(initTestDatabaseParams);
     await createColumnAndIndex({ tableName });
 
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-    };
-
     const req = {
       body: {
         requests: [
@@ -420,11 +402,6 @@ describe('requestHandler', () => {
     await initTestDatabase(initTestDatabaseParams);
     await createColumnAndIndex({ tableName });
 
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-    };
-
     // Facets must be in the request body
     const req = {
       body: {
@@ -463,11 +440,6 @@ describe('requestHandler', () => {
     // Prerequisites
     await initTestDatabase(initTestDatabaseParams);
     await createColumnAndIndex({ tableName });
-
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-    };
 
     const req = {
       body: {
@@ -514,6 +486,38 @@ describe('requestHandler', () => {
     hits.forEach((hit: any) => {
       expect(hit.price).toBeGreaterThanOrEqual(10);
       expect(hit.price).toBeLessThanOrEqual(20);
+    });
+  });
+
+  it('should handle a facet search', async () => {
+    // Prerequisites
+    await initTestDatabase(initTestDatabaseParams);
+    await createColumnAndIndex({ tableName });
+
+    const req = {
+      body: {
+        requests: [
+          {
+            params: { query: '', facetQuery: 'Jac' },
+            indexName: tableName,
+            type: 'facet',
+            facet: 'brand',
+          },
+        ],
+      },
+    };
+
+    await searchHandler(req, res);
+
+    const results = res.json.mock.calls[0][0].results;
+
+    expect(results[0].facetHits.length).toBe(4);
+    results[0].facetHits.forEach((facetHit: any) => {
+      expect(facetHit.brand).toMatch(/Jac/);
+      expect(facetHit.count).toBeGreaterThanOrEqual(1);
+      expect(facetHit.highlighted).toMatch(
+        /__ais-highlight__Jac__\/ais-highlight__/
+      );
     });
   });
 });
