@@ -1,0 +1,26 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`requestHandler should handle highlighting 1`] = `
+[
+  {
+    "_highlightResult": {
+      "description": {
+        "fullyHighlighted": false,
+        "matchLevel": "full",
+        "matchedWords": [],
+        "value": "__ais-highlight__Football__/ais-highlight__ __ais-highlight__awesome__/ais-highlight__ Is Good For Training And Recreational Purposes",
+      },
+      "name": {
+        "fullyHighlighted": false,
+        "matchLevel": "full",
+        "matchedWords": [],
+        "value": "__ais-highlight__Awesome__/ais-highlight__ Concrete Towels",
+      },
+    },
+    "description": "The Football awesome Is Good For Training And Recreational Purposes",
+    "id": 31,
+    "name": "Awesome Concrete Towels",
+    "price": 3187,
+  },
+]
+`;

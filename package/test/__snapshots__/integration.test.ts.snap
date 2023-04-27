@@ -1,0 +1,33 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`integration should return results from real server: no options 1`] = `
+{
+  "description": "The Apollotech B340 is an affordable wireless mouse with reliable connectivity, 12 months battery life and modern design",
+  "id": 4,
+  "name": "Bespoke Cotton Keyboard",
+  "price": 8026,
+}
+`;
+
+exports[`integration should return results from real server: with options 1`] = `
+{
+  "_highlightResult": {
+    "description": {
+      "fullyHighlighted": false,
+      "matchLevel": "full",
+      "matchedWords": [],
+      "value": "The Apollotech B340 is an __ais-highlight__affordable__/ais-highlight__ wireless mouse with reliable connectivity, 12 months battery life",
+    },
+    "name": {
+      "fullyHighlighted": false,
+      "matchLevel": "full",
+      "matchedWords": [],
+      "value": "Bespoke Cotton __ais-highlight__Keyboard__/ais-highlight__",
+    },
+  },
+  "description": "The Apollotech B340 is an affordable wireless mouse with reliable connectivity, 12 months battery life and modern design",
+  "id": 4,
+  "name": "Bespoke Cotton Keyboard",
+  "price": 8026,
+}
+`;

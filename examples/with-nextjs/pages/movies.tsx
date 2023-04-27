@@ -29,14 +29,14 @@ import { make_client } from 'postgres-searchbox/client';
 // During postgres-searchbox development this can be:
 // import { make_client } from '../../../package/build/client';
 
-const inter = Inter({ subsets: ['latin'] });
-
-const client = make_client('api/search');
+const client = make_client('api/search', {
+  highlightColumns: ['primarytitle', 'genres', 'titletype'],
+});
 
 function Hit({ hit }: { hit: any }) {
   return (
     <article>
-      <h1>{hit.primarytitle}</h1>
+      <Highlight hit={hit} attribute="primarytitle" className="Hit-label" />
       <p>
         {hit.titletype}, {hit.startyear}, {hit.runtimeminutes} min
       </p>
