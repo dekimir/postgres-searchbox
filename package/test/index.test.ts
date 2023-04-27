@@ -2,11 +2,10 @@ import pkg from 'pg';
 const { Client } = pkg;
 import format from 'pg-format';
 // Scripts
-import { initTestDatabase, extendDatabase } from '@scripts/mock-data.js';
+import { initTestDatabase } from '@scripts/mock-data.js';
 import { createColumnAndIndex } from '@scripts/create-index.js';
 // Main functions
 import { searchHandler } from '@/index.js';
-// import type { Hooks } from './bundle.types.js';
 
 /**
  * This file is for testing the server side functions
@@ -17,11 +16,6 @@ import { searchHandler } from '@/index.js';
 describe('requestHandler', () => {
   const tableName = 'test_table';
   const initTestDatabaseParams = { tableName, rowCount: 150, fakerSeed: 123 };
-  const extendDatabaseParams = {
-    facetKeyTable: 'test_facet_key',
-    facetValueTable: 'test_facet_value',
-    facetValueLookupTable: 'test_facet_value_lookup',
-  };
 
   const defaultExpectedResult = {
     index: tableName,
@@ -52,18 +46,6 @@ describe('requestHandler', () => {
 
   const dropTables = async () => {
     // Drop the tables so that the tests can be run independently
-    await client.query(
-      format(
-        `DROP TABLE IF EXISTS %I`,
-        extendDatabaseParams.facetValueLookupTable
-      )
-    );
-    await client.query(
-      format(`DROP TABLE IF EXISTS %I`, extendDatabaseParams.facetValueTable)
-    );
-    await client.query(
-      format(`DROP TABLE IF EXISTS %I`, extendDatabaseParams.facetKeyTable)
-    );
     await client.query(format(`DROP TABLE IF EXISTS %I`, tableName));
   };
 
@@ -78,7 +60,7 @@ describe('requestHandler', () => {
   });
 
   afterAll(async () => {
-    // await dropTables();
+    await dropTables();
     await client.end();
   });
 
@@ -539,89 +521,5 @@ describe('requestHandler', () => {
         /__ais-highlight__Jac__\/ais-highlight__/
       );
     });
-  });
-
-  it.only('should handle attributesForFaceting from secondary table', async () => {
-    // Prerequisites
-    const testIds = await initTestDatabase(initTestDatabaseParams);
-    await createColumnAndIndex({ tableName });
-    const extendResult = await extendDatabase({
-      tableName,
-      testIds,
-      fakerSeed: 123,
-      ...extendDatabaseParams,
-    });
-
-    expect(extendResult.rows).toMatchSnapshot();
-
-    // console.log(extendResult.rows[0]);
-
-    const req = {
-      body: {
-        requests: [
-          {
-            params: {
-              query: '',
-              // facetFilters: ['color:magenta'],
-              facetFilters: [
-                'color:magenta',
-                'color:blue',
-                'tag:target',
-                'brand:Jacobi LLC',
-                // 'brand:-test',
-              ],
-              numericFilters: ['price>=10', 'price<=20'],
-            },
-            indexName: tableName,
-          },
-        ],
-      },
-    };
-
-    await searchHandler(req, res, {
-      indexName: tableName,
-      settings: {
-        numericAttributesForFiltering: ['price'],
-      },
-      processHooks: (hooks) => {
-        hooks.addFilter(
-          'filters.isSingleTableAttribute',
-          'pgsb/isSingleTableAttribute',
-          (value, { attribute, type }) => {
-            return !['color', 'tag'].includes(attribute);
-          },
-          10
-        );
-        hooks.addFilter(
-          'filters.lookupTable',
-          'pgsb/lookupTable',
-          () => 'test_facet_value_lookup',
-          10
-        );
-        return;
-      },
-      // extendedAttributes: [
-      //   {
-      //     attributes: ['color', 'tag'],
-      //     filtersJoin: ({ format, attribute, type, typesToString }) =>
-      //       format(
-      //         /* sql */ `
-      //         INNER JOIN test_facet_value_lookup l_${attribute} ON t.id = l_${attribute}.test_table_id
-      //           AND l_${attribute}.facet_key_id = (SELECT id FROM test_facet_key   WHERE name = %L)
-      //           AND l_${attribute}.facet_value_id IN (
-      //             SELECT id FROM test_facet_value
-      //             WHERE facet_key_id = l_${attribute}.facet_key_id
-      //             AND ${typesToString({ attribute: 'name', type })}
-      //           )
-      //       `,
-      //         attribute
-      //       ),
-      //   },
-      // ],
-    });
-
-    // Request1
-    const results = res.json.mock.calls[0][0].results;
-    // expect(results[0].hits[0].brand).toBe('Jacobi LLC');
   });
 });
