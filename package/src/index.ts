@@ -395,8 +395,8 @@ const handleFacetSearch = async (
     // facet part
     facet,
     facet,
-    facetQuery,
-    `${paramsWithSettings.highlightPreTag}${facetQuery}${paramsWithSettings.highlightPostTag}`,
+    `(${facetQuery})`,
+    `${paramsWithSettings.highlightPreTag}\\1${paramsWithSettings.highlightPostTag}`,
     facet,
     `%${facetQuery}%`,
     facet

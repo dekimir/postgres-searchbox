@@ -500,7 +500,7 @@ describe('requestHandler', () => {
       body: {
         requests: [
           {
-            params: { query: '', facetQuery: 'Jac' },
+            params: { query: '', facetQuery: 'jac' },
             indexName: tableName,
             type: 'facet',
             facet: 'brand',
