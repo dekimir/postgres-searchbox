@@ -4,9 +4,8 @@ import type {
   GetFiltersReturn,
   Operator,
   NumericFilter,
-  NumericFilterNoArrays,
-  NumericRefinements,
   Refinements,
+  AllRefinements,
 } from './filters.types.js';
 import { parseWithDefault } from '../utils/index.js';
 
@@ -41,7 +40,7 @@ export const getFilters = async ({
    * 3. numericAttributesForFiltering contains information about the numeric facets
    */
 
-  const refinements: Refinements = {};
+  const refinements: AllRefinements = {};
 
   // build - non-numeric
   const buildRecursive = (facetFilters: any, depth = 0) => {
@@ -55,7 +54,7 @@ export const getFilters = async ({
     const [attribute, value] = facetFilters.split(':');
     // Create an object for this attribute if it doesn't exist
     if (!refinements[attribute]) {
-      refinements[attribute] = { OR: [], AND: [], ['AND NOT']: [] };
+      refinements[attribute] = { OR: [], AND: [], ['AND NOT']: [], RANGES: [] };
     }
     if (depth < 2) {
       // It's AND
@@ -82,90 +81,97 @@ export const getFilters = async ({
     destructureNumericFilter(filter)
   );
 
-  /**
-   * Numeric simple filters (not ranges)
-   * - let's add them to the refinements object
-   */
-
   numericFiltersParsed
-    .filter(({ operator }) => ['=', '!='].includes(operator))
+    .sort(sortNumericFilters)
     .forEach(({ attribute, operator, value }) => {
       if (!refinements[attribute]) {
         // Create an object for this attribute if it doesn't exist
-        refinements[attribute] = { OR: [], AND: [], ['AND NOT']: [] };
+        refinements[attribute] = {
+          OR: [],
+          AND: [],
+          ['AND NOT']: [],
+          RANGES: [{}],
+        };
       }
-      const key = operator === '=' ? 'OR' : 'AND NOT';
-      const nevValue = Array.isArray(value) ? value : [value];
-      // Add the value(s) to the array
-      refinements[attribute][key].push(...nevValue);
+
+      if (['=', '!='].includes(operator)) {
+        /**
+         * Numeric non-ranges
+         */
+        const key = operator === '=' ? 'OR' : 'AND NOT';
+        const nevValue = Array.isArray(value) ? value : [value];
+        // Add the value(s) to the array
+        refinements[attribute][key].push(...nevValue);
+        return;
+      }
+
+      if (['>', '<', '>=', '<='].includes(operator) && !Array.isArray(value)) {
+        /**
+         * Numeric ranges
+         * This is a bit more complex because we need to group ranges like:
+         * (price >= 10 AND price <= 20) OR (price >= 30 AND price <= 40)
+         */
+
+        const currentIndex = refinements[attribute].RANGES.length - 1;
+        const current = refinements[attribute].RANGES[currentIndex];
+
+        if (['>=', '>'].includes(operator) && (current['<'] || current['<='])) {
+          // We need a new range
+          refinements[attribute].RANGES.push({
+            ['>=']: operator === '>=' ? value : undefined,
+            ['>']: operator === '>' ? value : undefined,
+          });
+        } else if (
+          '>' === operator &&
+          Object.values(current).every((v) => !v)
+        ) {
+          // It's empty, we can just update the current range
+          current['>'] = value;
+        } else if (
+          '>=' === operator &&
+          Object.values(current).every((v) => !v)
+        ) {
+          //  It's empty, we can just update the current range
+          current['>='] = value;
+        } else if ('<' === operator) {
+          // We can just update the current range
+          current['<='] = undefined;
+          current['<'] = value;
+        } else if ('<=' === operator) {
+          // We can just update the current range
+          current['<'] = undefined;
+          current['<='] = value;
+        }
+
+        refinements[attribute].RANGES[currentIndex] = current;
+      }
     });
 
-  /**
-   * Numeric ranges
-   * This is a bit more complex because we need to group ranges like:
-   * (price >= 10 AND price <= 20) OR (price >= 30 AND price <= 40)
-   */
+  const sqlArray: string[] = [];
 
-  const ranges = (
-    numericFiltersParsed.filter(
-      ({ operator, value }) =>
-        ['>', '<', '>=', '<='].includes(operator) && !Array.isArray(value)
-    ) as NumericFilterNoArrays[]
-  )
-    .sort(sortNumericFilters)
-    .reduce((acc, filter) => {
-      const { attribute, operator, value } = filter;
+  const typesToString = ({
+    attribute,
+    type,
+  }: {
+    attribute: string;
+    type: Refinements;
+  }) => {
+    // Ranges
+    const rangeArray = type.RANGES.map((range) => {
+      const parts = [
+        range['>='] ? format(`%s >= %L`, attribute, range['>=']) : '',
+        range['>'] ? format(`%s > %L`, attribute, range['>']) : '',
+        range['<'] ? format(`%s < %L`, attribute, range['<']) : '',
+        range['<='] ? format(`%s <= %L`, attribute, range['<=']) : '',
+      ].filter((s) => s.length);
+      return parts.length === 1 ? parts[0] : `( ${parts.join(' AND ')} )`;
+    });
 
-      // Create an array with object for this attribute if it doesn't exist
-      if (!acc[attribute]) acc[attribute] = [{}];
+    let rangeString = '';
+    if (rangeArray.length === 1) rangeString = rangeArray[0];
+    if (rangeArray.length > 1) rangeString = `( ${rangeArray.join(' OR ')} )`;
 
-      const currentIndex = acc[attribute].length - 1;
-      const current = acc[attribute][currentIndex];
-
-      if (['>=', '>'].includes(operator) && (current['<'] || current['<='])) {
-        // We need a new range
-        acc[attribute].push({
-          ['>=']: operator === '>=' ? value : undefined,
-          ['>']: operator === '>' ? value : undefined,
-        });
-      } else if ('>' === operator && Object.values(current).every((v) => !v)) {
-        // It's empty, we can just update the current range
-        current['>'] = value;
-      } else if ('>=' === operator && Object.values(current).every((v) => !v)) {
-        //  It's empty, we can just update the current range
-        current['>='] = value;
-      } else if ('<' === operator) {
-        // We can just update the current range
-        current['<='] = undefined;
-        current['<'] = value;
-      } else if ('<=' === operator) {
-        // We can just update the current range
-        current['<'] = undefined;
-        current['<='] = value;
-      }
-
-      acc[attribute][currentIndex] = current;
-      return acc;
-    }, {} as NumericRefinements);
-
-  const numericSqlArray = Object.entries(ranges).map(([attribute, range]) => {
-    let rangeSql: string[] = range
-      .map((range) => {
-        const parts = [
-          range['>='] ? format(`%s >= %L`, attribute, range['>=']) : '',
-          range['>'] ? format(`%s > %L`, attribute, range['>']) : '',
-          range['<'] ? format(`%s < %L`, attribute, range['<']) : '',
-          range['<='] ? format(`%s <= %L`, attribute, range['<=']) : '',
-        ].filter((s) => s.length);
-
-        return parts.length === 1 ? parts[0] : `( ${parts.join(' AND ')} )`;
-      })
-      .filter((s) => s.length);
-
-    return rangeSql.length === 1 ? rangeSql[0] : `( ${rangeSql.join(' OR ')} )`;
-  });
-
-  const sqlArray = Object.entries(refinements).map(([attribute, type]) => {
+    // Everything else
     return [
       type.OR.length ? format('%s IN( %L )', attribute, type.OR) : '',
       type.AND.length
@@ -174,14 +180,19 @@ export const getFilters = async ({
       type['AND NOT'].length
         ? format('%s NOT IN ( %L )', attribute, type['AND NOT'])
         : '',
+      rangeString,
     ]
       .filter((p) => p.length)
       .join(' AND ');
+  };
+
+  Object.entries(refinements).forEach(([attribute, type]) => {
+    sqlArray.push(typesToString({ attribute, type }));
   });
 
   return {
     db: {
-      formatted: [...sqlArray, ...numericSqlArray].join(' AND '),
+      formatted: sqlArray.join(' AND '),
     },
   };
 };
