@@ -57,6 +57,8 @@ describe('requestHandler', () => {
 
   beforeEach(async () => {
     await dropTables();
+    await initTestDatabase(initTestDatabaseParams);
+    await createColumnAndIndex({ tableName });
   });
 
   afterAll(async () => {
@@ -69,10 +71,6 @@ describe('requestHandler', () => {
    */
 
   it('should return results', async () => {
-    // Prerequisites
-    await initTestDatabase(initTestDatabaseParams);
-    await createColumnAndIndex({ tableName });
-
     const query = 'bespoke keyboard';
 
     const req = {
@@ -102,10 +100,6 @@ describe('requestHandler', () => {
   });
 
   it('should return multiple pages', async () => {
-    // Prerequisites
-    await initTestDatabase(initTestDatabaseParams);
-    await createColumnAndIndex({ tableName });
-
     /**
      * Page 1
      */
@@ -143,15 +137,47 @@ describe('requestHandler', () => {
     expect(res.json).toHaveBeenCalledWith(expected);
   }, 10_000);
 
+  it.only('should paginate with offset param', async () => {
+    const req_1 = {
+      body: {
+        requests: [
+          {
+            params: { query: 'good', offset: 10, length: 10 },
+            indexName: tableName,
+          },
+          // Without length, uses a default value
+          { params: { query: 'good', offset: 10 }, indexName: tableName },
+        ],
+      },
+    };
+    await searchHandler(req_1, res);
+
+    const expected = {
+      results: [
+        {
+          ...defaultExpectedResult,
+          length: 10,
+          offset: 10,
+          nbPages: 2,
+        },
+        {
+          ...defaultExpectedResult,
+          length: 20,
+          offset: 10,
+          nbPages: 2,
+        },
+      ],
+    };
+    // Test status and json are called
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(expected);
+  }, 10_000);
+
   /**
    * Test page that's out of range
    */
 
   it('should return empty array', async () => {
-    // Prerequisites
-    await initTestDatabase(initTestDatabaseParams);
-    await createColumnAndIndex({ tableName });
-
     const req = {
       body: {
         requests: [
@@ -180,10 +206,7 @@ describe('requestHandler', () => {
    * Test excessive pagination returns 400
    */
 
-  it('should return 400', async () => {
-    // Prerequisites
-    await initTestDatabase(initTestDatabaseParams);
-    await createColumnAndIndex({ tableName });
+  it('should return 400 on excessive pagination', async () => {
     // Spy on console.log so errors don't pollute the test output
     consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
@@ -224,10 +247,6 @@ describe('requestHandler', () => {
    */
 
   it('should sort by column', async () => {
-    // Prerequisites
-    await initTestDatabase(initTestDatabaseParams);
-    await createColumnAndIndex({ tableName });
-
     const indexName = `${tableName}?sort=price+asc,name+asc`;
     const indexName2 = `${tableName}?sort=price+desc`;
 
@@ -276,10 +295,6 @@ describe('requestHandler', () => {
   });
 
   it('should handle returning columns', async () => {
-    // Prerequisites
-    await initTestDatabase(initTestDatabaseParams);
-    await createColumnAndIndex({ tableName });
-
     const req = {
       body: {
         requests: [
@@ -337,10 +352,6 @@ describe('requestHandler', () => {
   });
 
   it('should handle highlighting', async () => {
-    // Prerequisites
-    await initTestDatabase(initTestDatabaseParams);
-    await createColumnAndIndex({ tableName });
-
     const req = {
       body: {
         requests: [
@@ -400,10 +411,6 @@ describe('requestHandler', () => {
   });
 
   it('should return facets on request with empty query', async () => {
-    // Prerequisites
-    await initTestDatabase(initTestDatabaseParams);
-    await createColumnAndIndex({ tableName });
-
     // Facets must be in the request body
     const req = {
       body: {
@@ -439,10 +446,6 @@ describe('requestHandler', () => {
   });
 
   it('should handle filter', async () => {
-    // Prerequisites
-    await initTestDatabase(initTestDatabaseParams);
-    await createColumnAndIndex({ tableName });
-
     const req = {
       body: {
         requests: [
@@ -492,10 +495,6 @@ describe('requestHandler', () => {
   });
 
   it('should handle a facet search', async () => {
-    // Prerequisites
-    await initTestDatabase(initTestDatabaseParams);
-    await createColumnAndIndex({ tableName });
-
     const req = {
       body: {
         requests: [
