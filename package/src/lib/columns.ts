@@ -17,7 +17,7 @@ export const getColumns = (attributesToRetrieve: readonly string[]) => {
 
   if (!attributesToRetrieve?.length || attributesToRetrieve.includes('*')) {
     return {
-      db: { formatted: '*' },
+      db: { formatted: ['*'] },
       updateHit: (hit: Hit) => {
         // Remove the vector column here because there is
         // no easy way to do SELECT * and exclude a column.
@@ -29,9 +29,7 @@ export const getColumns = (attributesToRetrieve: readonly string[]) => {
 
   return {
     db: {
-      formatted: attributesToRetrieve
-        .map((att) => format('%I', att))
-        .join(', '),
+      formatted: attributesToRetrieve.map((att) => format('%I', att)),
     },
     updateHit: null,
   };
