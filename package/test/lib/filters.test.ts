@@ -6,7 +6,7 @@ import { getFilters } from '@/lib/filters.js';
  */
 
 describe('filters', () => {
-  it.only('should return SQL from facetFilters & numericFilters', async () => {
+  it('should return SQL from facetFilters & numericFilters', async () => {
     const returnValue = await getFilters({
       ...defaults.settings,
       facetFilters: [

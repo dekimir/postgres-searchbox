@@ -137,7 +137,7 @@ describe('requestHandler', () => {
     expect(res.json).toHaveBeenCalledWith(expected);
   }, 10_000);
 
-  it.only('should paginate with offset param', async () => {
+  it('should paginate with offset param', async () => {
     const req_1 = {
       body: {
         requests: [
