@@ -64,8 +64,8 @@ describe('integration', () => {
     // Teardown express
     await serverListener.close();
     // Drop and close the database connection
-    // const dropSql = format('DROP TABLE IF EXISTS %I', tableName);
-    // await client.query(dropSql);
+    const dropSql = format('DROP TABLE IF EXISTS %I', tableName);
+    await client.query(dropSql);
     await client.end();
   });
 
