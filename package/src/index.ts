@@ -276,9 +276,9 @@ const handleRequest = async (
   return {
     hits:
       hits?.map((hit) => {
-        hit = highlight?.updateHit(hit) || hit;
-        return columns.updateHit?.(hit) || hit;
-      }) || [],
+        hit = highlight?.updateHit(hit) ?? hit;
+        return columns.updateHit?.(hit) ?? hit;
+      }) ?? [],
     ...pagination.updateRes({
       totalHits,
       res: pagination.res,
