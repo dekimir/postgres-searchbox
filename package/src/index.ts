@@ -195,7 +195,8 @@ const handleRequest = async (
       SELECT *
       FROM %I
       WHERE
-        ( ( %I @@ websearch_to_tsquery(%L) AND %L <> '' )  OR %L = '' )
+        -- Search OR get *all* results on an empty query
+        ( %I @@ websearch_to_tsquery(%L) OR %L = '' )
         ${filters?.db.formatted ? ` AND ${filters?.db.formatted}` : ``}
     ),
     --
@@ -233,7 +234,6 @@ const handleRequest = async (
   )`,
     table,
     VECTOR_COLUMN,
-    query,
     query,
     query,
     pagination.db.offset,
@@ -373,7 +373,8 @@ const handleFacetSearch = async (
       SELECT *
       FROM %I
       WHERE
-        ( ( %I @@ websearch_to_tsquery(%L) AND %L <> '' )  OR %L = '' )
+        -- Search OR get *all* results on an empty query
+        ( %I @@ websearch_to_tsquery(%L) OR %L = '' )
         ${filters?.db.formatted ? ` AND ${filters?.db.formatted}` : ``}
     )
     --
@@ -389,7 +390,6 @@ const handleFacetSearch = async (
   )`,
     table,
     VECTOR_COLUMN,
-    query,
     query,
     query,
     // facet part

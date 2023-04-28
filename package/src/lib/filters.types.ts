@@ -1,5 +1,5 @@
 import type { SearchOptions } from '../client.types.js';
-import type { Handler, Settings } from '../index.types.js';
+import type { Settings } from '../index.types.js';
 
 /**
  * Main function props
@@ -10,7 +10,6 @@ export interface Props {
   numericFilters?: SearchOptions['numericFilters'];
   numericAttributesForFiltering: Required<Settings>['numericAttributesForFiltering'];
   maxFacetHits: Required<Settings>['maxFacetHits'];
-  extendedAttributes?: Handler.Config['extendedAttributes'];
 }
 
 export type GetFiltersReturn = {

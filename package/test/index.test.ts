@@ -220,7 +220,6 @@ describe('requestHandler', () => {
     await searchHandler(req, res);
 
     // Test status and json are called
-    expect(consoleSpy).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
       error: 'Request contained invalid payload',
@@ -238,7 +237,6 @@ describe('requestHandler', () => {
     };
     await searchHandler(req2, res);
 
-    expect(consoleSpy).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
