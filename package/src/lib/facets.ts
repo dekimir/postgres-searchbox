@@ -36,11 +36,11 @@ export const getFacets = ({
         /* sql */ `
         %I AS (
           SELECT coalesce( 
-            json_object_agg( %s, cnt ORDER BY cnt DESC ), 
+            json_object_agg( %s, postgres_searchbox_v1_count ORDER BY postgres_searchbox_v1_count DESC ), 
             '{}'::json
           ) as details
             FROM (
-              SELECT %s, count(*) AS cnt
+              SELECT %s, count(*) AS postgres_searchbox_v1_count
               FROM all_selection
               WHERE %s IS NOT NULL
               GROUP by %s

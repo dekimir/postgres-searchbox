@@ -44,7 +44,7 @@ export const getHighlight = ({
       query,
       highlightPreTag,
       highlightPostTag,
-      `_highlight_${c}`
+      `postgres_searchbox_v1_highlight_${c}`
     )
   );
 
@@ -52,10 +52,11 @@ export const getHighlight = ({
     hit._highlightResult = {};
 
     for (const column of attributesToHighlight) {
-      const highlight = hit[`_highlight_${column}`]?.toString();
+      const highlight =
+        hit[`postgres_searchbox_v1_highlight_${column}`]?.toString();
 
-      // Delete the _highlight_* columns - they're just used internally by this function
-      delete hit[`_highlight_${column}`];
+      // Delete the postgres_searchbox_v1_highlight_* columns - they're just used internally by this function
+      delete hit[`postgres_searchbox_v1_highlight_${column}`];
 
       if (!highlight?.includes(highlightPreTag)) {
         hit._highlightResult[column] = {

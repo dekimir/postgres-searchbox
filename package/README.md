@@ -193,7 +193,8 @@ The settings property map directly to
 but are only a subset of Algolia. They can be set with type-safety and autofill `ctrl + space` in VSCode.
 
 If your searchHandler should handle multiple indexes, instead of passing one config object you can pass in an
-array of configs like this. Make sure to set the indexName property for each config.
+array of configs like this. Make sure to set the indexName property for each config - and that each index has
+already been created with the create-index script.
 
 ```javascript pages/api/search.ts
 [

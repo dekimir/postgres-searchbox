@@ -39,7 +39,7 @@ describe('highlight', () => {
           ${column}, 
           websearch_to_tsquery('test'), 
           'StartSel=\"__ais-highlight__\",StopSel=\"__/ais-highlight__\",MaxFragments=2,HighlightAll=true'
-        ) AS _highlight_${column}
+        ) AS postgres_searchbox_v1_highlight_${column}
       `);
 
       expect(normalizeSql(sql)).toBe(expected);
