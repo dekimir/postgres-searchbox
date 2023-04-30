@@ -7,48 +7,48 @@ exports[`requestHandler should handle highlighting 1`] = `
       "fullyHighlighted": false,
       "matchLevel": "full",
       "matchedWords": [],
-      "value": "The slim & simple Maple Gaming __ais-highlight__Keyboard__/ais-highlight__ from Dev Byte comes with a sleek body and",
+      "value": "__ais-highlight__Ball__/ais-highlight__ Carbonite web goalkeeper gloves are ergonomically designed to give easy fit",
     },
     "name": {
       "fullyHighlighted": false,
       "matchLevel": "full",
       "matchedWords": [],
-      "value": "__ais-highlight__Bespoke__/ais-highlight__ Granite __ais-highlight__Keyboard__/ais-highlight__",
+      "value": "__ais-highlight__Bespoke__/ais-highlight__ Cotton __ais-highlight__Ball__/ais-highlight__",
     },
   },
-  "brand": "Powlowski, Brekke and Hamill",
-  "description": "The slim & simple Maple Gaming Keyboard from Dev Byte comes with a sleek body and 7- Color RGB LED Back-lighting for smart functionality",
-  "id": 20,
-  "name": "Bespoke Granite Keyboard",
-  "price": 14,
+  "brand": "Bauch - Leannon",
+  "description": "Ball Carbonite web goalkeeper gloves are ergonomically designed to give easy fit",
+  "id": 7,
+  "name": "Bespoke Cotton Ball",
+  "price": 28,
 }
 `;
 
 exports[`requestHandler should return facets on request with empty query 1`] = `
 {
   "brand": {
-    "Abshire - Carroll": 2,
-    "Hammes Group": 2,
-    "Hayes - Kutch": 2,
-    "Hickle - Bins": 2,
-    "Kessler Inc": 2,
-    "Kiehn Inc": 2,
-    "Langworth, Kuvalis and Kohler": 2,
-    "Littel, Borer and Bergstrom": 2,
-    "Muller - Sporer": 2,
-    "Smitham Group": 2,
+    "Altenwerth LLC": 2,
+    "Beier Group": 2,
+    "Dibbert - O'Kon": 2,
+    "Dibbert, Hermann and Nienow": 2,
+    "Donnelly - Klocko": 2,
+    "Mohr, Kessler and Bernhard": 2,
+    "Ratke, Reilly and Halvorson": 2,
+    "Schuster Group": 2,
+    "Stracke and Sons": 2,
+    "Tromp - Connelly": 2,
   },
   "price": {
-    "11": 6,
-    "12": 7,
-    "13": 10,
+    "11": 7,
     "14": 6,
-    "19": 5,
-    "22": 8,
-    "24": 9,
-    "33": 7,
-    "38": 7,
-    "39": 6,
+    "15": 6,
+    "17": 6,
+    "18": 9,
+    "27": 10,
+    "28": 6,
+    "30": 7,
+    "31": 9,
+    "40": 6,
   },
 }
 `;
@@ -56,20 +56,20 @@ exports[`requestHandler should return facets on request with empty query 1`] = `
 exports[`requestHandler should return facets on request with empty query 2`] = `
 {
   "price": {
-    "avg": 24.5933,
+    "avg": 23.94,
     "max": 40,
     "min": 10,
-    "sum": 3689,
+    "sum": 3591,
   },
 }
 `;
 
 exports[`requestHandler should return results 1`] = `
 {
-  "brand": "Powlowski, Brekke and Hamill",
-  "description": "The slim & simple Maple Gaming Keyboard from Dev Byte comes with a sleek body and 7- Color RGB LED Back-lighting for smart functionality",
-  "id": 20,
-  "name": "Bespoke Granite Keyboard",
-  "price": 14,
+  "brand": "Conroy, Hudson and Kessler",
+  "description": "Andy shoes are designed to keeping in mind durability as well as trends, the most stylish range of shoes & sandals",
+  "id": 11,
+  "name": "Modern Plastic Keyboard",
+  "price": 13,
 }
 `;

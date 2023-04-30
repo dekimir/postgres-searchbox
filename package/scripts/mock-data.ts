@@ -1,43 +1,36 @@
+import { faker } from '@faker-js/faker';
 import pkg from 'pg';
 const { Client } = pkg;
 import format from 'pg-format';
-import { faker } from '@faker-js/faker';
 
-let brand: string = '';
+let previousBrand: string = '';
 
-function createRandomProduct(i: number) {
+function createRandomProduct(i: number, fakerSeed: number) {
+  // Set seed so that values are consistent even when aditional
+  // faker.x() calls are added here.
+  // Any new faker calls should be added to the end of this function
+  // to avoid changing the results of existing faker calls.
+  faker.seed(fakerSeed);
+
   const name = faker.commerce.productName();
-  const description = faker.commerce.productDescription();
+  let description = faker.commerce.productDescription();
   // Small price range so we get duplicates
   const price = faker.commerce.price(10, 40, 0);
+  let brand = faker.company.name();
+  // Save the brand so we can re-use it on the next product
+  if (i % 7 === 5) previousBrand = brand;
   // To test the full-text search we need some products to have
-  // common words in the name and description
-  // Most of the time we return a random product
-  // with results from faker without any changes
-  if (i % 10 !== 0) {
-    brand = faker.company.name();
-    return [name, description, price, brand];
+  // common words in the name and description.
+  // Every 7th product we:
+  // - return a product with common words
+  // - re-use the previous brand
+  if (i % 7 === 6) {
+    brand = previousBrand;
+    // Add the last word of name to the start of the description
+    description = `${name.split(' ').pop()} ${description}`;
   }
 
-  /**
-   * Modify the faker results to create products with common words
-   * and re-use brand
-   */
-
-  // Split the name and description into words
-  const nameParts = name.split(' ');
-  const descriptionParts = description.split(' ');
-  // Pick a word from the name
-  const namePosition = Math.floor(((i % 3) / 3) * nameParts.length);
-  const nameWord = nameParts[namePosition].toLowerCase();
-  // Pick a position in the description to insert the name word
-  const descriptionPosition = Math.floor(
-    ((i % 7) / 7) * descriptionParts.length
-  );
-  // Add the name word to the description
-  descriptionParts.splice(descriptionPosition, 0, nameWord);
-
-  return [name, descriptionParts.join(' '), price, brand];
+  return [name, description, price, brand];
 }
 
 export async function initTestDatabase({
@@ -58,16 +51,13 @@ export async function initTestDatabase({
   );
   // run the sql
   await client.query(sql);
-  // Set deed so that values are always the same
-  if (fakerSeed) {
-    faker.seed(123);
-  }
+
   // Generate commerce test data using faker and createRandomProduct
   // const values = Array.from({ length: rowCount }, createRandomProduct);
 
   const values = [];
   for (let i = 0; i < rowCount; i++) {
-    values.push(createRandomProduct(i));
+    values.push(createRandomProduct(i, (fakerSeed ?? 0) + i));
   }
 
   // Insert test data into test table

@@ -71,7 +71,7 @@ describe('requestHandler', () => {
    */
 
   it('should return results', async () => {
-    const query = 'bespoke keyboard';
+    const query = 'designed keyboard';
 
     const req = {
       body: {
@@ -87,7 +87,7 @@ describe('requestHandler', () => {
       results: [
         {
           ...defaultExpectedResult,
-          nbHits: 4,
+          nbHits: 6,
           nbPages: 1,
           params: new URLSearchParams(req.body.requests[0].params).toString(),
           query: req.body.requests[0].params.query,
@@ -114,7 +114,7 @@ describe('requestHandler', () => {
       results: [
         {
           ...defaultExpectedResult,
-          nbHits: 25,
+          nbHits: 23,
           nbPages: 2,
         },
       ],
@@ -195,7 +195,7 @@ describe('requestHandler', () => {
           ...defaultExpectedResult,
           hits: [],
           page: 3,
-          nbHits: 25,
+          nbHits: 23,
           nbPages: 2,
         },
       ],
@@ -271,12 +271,12 @@ describe('requestHandler', () => {
         {
           ...defaultExpectedResult,
           index: indexName,
-          nbHits: 25,
+          nbHits: 23,
         },
         {
           ...defaultExpectedResult,
           index: indexName2,
-          nbHits: 25,
+          nbHits: 23,
         },
       ],
     });
@@ -355,7 +355,7 @@ describe('requestHandler', () => {
         requests: [
           {
             params: {
-              query: 'bespoke keyboard',
+              query: 'bespoke ball',
               page: 0,
               highlightPreTag: '__ais-highlight__',
               highlightPostTag: '__/ais-highlight__',
@@ -450,7 +450,7 @@ describe('requestHandler', () => {
           {
             params: {
               query: '',
-              facetFilters: ['brand:Jacobi LLC', 'brand:-test'],
+              facetFilters: ['brand:Bauch - Leannon', 'brand:-test'],
             },
             indexName: tableName,
           },
@@ -479,7 +479,7 @@ describe('requestHandler', () => {
 
     // Request1
     const results = res.json.mock.calls[0][0].results;
-    expect(results[0].hits[0].brand).toBe('Jacobi LLC');
+    expect(results[0].hits[0].brand).toBe('Bauch - Leannon');
 
     // Request2
     const hits = results[1].hits;
@@ -497,7 +497,7 @@ describe('requestHandler', () => {
       body: {
         requests: [
           {
-            params: { query: '', facetQuery: 'jac' },
+            params: { query: '', facetQuery: 'bau' },
             indexName: tableName,
             type: 'facet',
             facet: 'brand',
@@ -510,13 +510,20 @@ describe('requestHandler', () => {
 
     const results = res.json.mock.calls[0][0].results;
 
-    expect(results[0].facetHits.length).toBe(4);
+    expect(results[0].facetHits.length).toBe(6);
     results[0].facetHits.forEach((facetHit: any) => {
-      expect(facetHit.brand).toMatch(/Jac/);
       expect(facetHit.count).toBeGreaterThanOrEqual(1);
-      expect(facetHit.highlighted).toMatch(
-        /__ais-highlight__Jac__\/ais-highlight__/
-      );
+      expect(facetHit.brand).toMatch(/Bau/i);
+      if (facetHit.brand === 'Bauch - Leannon') {
+        // Test for correct case in highlighting
+        expect(facetHit.highlighted).toMatch(
+          /__ais-highlight__Bau__\/ais-highlight__/
+        );
+      } else {
+        expect(facetHit.highlighted).toMatch(
+          /__ais-highlight__Bau__\/ais-highlight__/i
+        );
+      }
     });
   });
 });

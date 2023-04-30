@@ -79,7 +79,7 @@ describe('integration', () => {
     const response = await client.search([
       {
         indexName: tableName,
-        params: { query: 'bespoke keyboard' },
+        params: { query: 'designed keyboard' },
       },
     ]);
 
@@ -97,7 +97,7 @@ describe('integration', () => {
       {
         indexName: tableName,
         params: {
-          query: 'bespoke keyboard',
+          query: 'designed keyboard',
           highlightPreTag: '__ais-highlight__',
           highlightPostTag: '__/ais-highlight__',
           attributesToHighlight: ['name', 'description'],

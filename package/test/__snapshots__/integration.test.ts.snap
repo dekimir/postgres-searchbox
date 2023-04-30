@@ -2,11 +2,11 @@
 
 exports[`integration should return results from real server: no options 1`] = `
 {
-  "brand": "Powlowski, Brekke and Hamill",
-  "description": "The slim & simple Maple Gaming Keyboard from Dev Byte comes with a sleek body and 7- Color RGB LED Back-lighting for smart functionality",
-  "id": 20,
-  "name": "Bespoke Granite Keyboard",
-  "price": 14,
+  "brand": "Conroy, Hudson and Kessler",
+  "description": "Andy shoes are designed to keeping in mind durability as well as trends, the most stylish range of shoes & sandals",
+  "id": 11,
+  "name": "Modern Plastic Keyboard",
+  "price": 13,
 }
 `;
 
@@ -17,18 +17,18 @@ exports[`integration should return results from real server: with options 1`] = 
       "fullyHighlighted": false,
       "matchLevel": "full",
       "matchedWords": [],
-      "value": "The slim & simple Maple Gaming __ais-highlight__Keyboard__/ais-highlight__ from Dev Byte comes with a sleek body and",
+      "value": "Andy shoes are __ais-highlight__designed__/ais-highlight__ to keeping in mind durability as well as trends, the most",
     },
     "name": {
       "fullyHighlighted": false,
       "matchLevel": "full",
       "matchedWords": [],
-      "value": "__ais-highlight__Bespoke__/ais-highlight__ Granite __ais-highlight__Keyboard__/ais-highlight__",
+      "value": "Modern Plastic __ais-highlight__Keyboard__/ais-highlight__",
     },
   },
-  "description": "The slim & simple Maple Gaming Keyboard from Dev Byte comes with a sleek body and 7- Color RGB LED Back-lighting for smart functionality",
-  "id": 20,
-  "name": "Bespoke Granite Keyboard",
-  "price": 14,
+  "description": "Andy shoes are designed to keeping in mind durability as well as trends, the most stylish range of shoes & sandals",
+  "id": 11,
+  "name": "Modern Plastic Keyboard",
+  "price": 13,
 }
 `;
