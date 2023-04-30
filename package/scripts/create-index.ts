@@ -29,7 +29,7 @@ export async function createColumnAndIndex({
   // Get column names
   const columnNames = await getTextColumnsFromTable({ tableName });
   if (!columnNames?.length) {
-    throw 'Found no text columns in createColumnAndIndex > getTextColumnsFromTable';
+    throw `Found no text columns in table: ${tableName}`;
   }
   // Previously this had an extra || ' ' on the end? Was it needed or a typo?
   const valExpr = columnNames

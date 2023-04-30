@@ -15,11 +15,11 @@ import { parseWithDefault } from '../utils/index.js';
  * Both the <DynamicWidgets> and <RefinementList> components make request with this format
  */
 
-export const getFilters = async ({
+export const getFilters = ({
   facetFilters,
   numericFilters: numericFiltersMaybeString,
   numericAttributesForFiltering,
-}: Props): Promise<GetFiltersReturn> => {
+}: Props): GetFiltersReturn => {
   // Build numericFilters based on 2 conditionals
   const numericFilters: readonly string[] = Array.isArray(
     numericFiltersMaybeString

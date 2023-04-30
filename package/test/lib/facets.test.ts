@@ -26,8 +26,8 @@ describe('facets', () => {
   });
 
   afterAll(async () => {
-    // const dropSql = format('DROP TABLE IF EXISTS %I', tableName);
-    // await client.query(dropSql);
+    const dropSql = format('DROP TABLE IF EXISTS %I', tableName);
+    await client.query(dropSql);
     await client.end();
   });
 
@@ -39,7 +39,7 @@ describe('facets', () => {
     await initTestDatabase(initTestDatabaseParams);
     await createColumnAndIndex({ tableName });
 
-    const facets = await getFacets({
+    const facets = getFacets({
       ...defaults.settings,
       facets: ['brand', 'price'],
       numericAttributesForFiltering: ['price'],

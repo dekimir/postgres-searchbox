@@ -151,7 +151,7 @@ const handleRequest = async (
     paramsWithSettings[key] = value;
   });
 
-  const facets = await lib.getFacets(
+  const facets = lib.getFacets(
     pick(paramsWithSettings, [
       'facets',
       'attributesForFaceting',
@@ -163,7 +163,7 @@ const handleRequest = async (
     ])
   );
 
-  const filters = await lib.getFilters(
+  const filters = lib.getFilters(
     pick(paramsWithSettings, [
       'facetFilters',
       'numericFilters',

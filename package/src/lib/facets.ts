@@ -8,7 +8,7 @@ import type { Props, GetFacetsReturn } from './facets.types.js';
  * maxFacetHits: Maximum number of facet hits to return during a search for facet values.
  */
 
-export const getFacets = async ({
+export const getFacets = ({
   facets: facetsMaybeString,
   attributesForFaceting,
   maxValuesPerFacet,
@@ -16,7 +16,7 @@ export const getFacets = async ({
   maxFacetHits,
   renderingContent,
   numericAttributesForFiltering,
-}: Props): Promise<GetFacetsReturn> => {
+}: Props): GetFacetsReturn => {
   // Build facets based on 2 conditionals
   const facets: readonly string[] =
     facetsMaybeString?.includes('*') || !facetsMaybeString
