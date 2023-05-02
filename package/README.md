@@ -116,6 +116,7 @@ The following components should work.:
 - SortBy
 - Highlight
 - DynamicWidgets
+- HierarchicalMenu
 
 Sorting by columns is supported. Use the syntax `?column_name(+asc|+desc)?(+nulls+last)?,column_name_2(+asc|+desc)...`.
 
@@ -151,6 +152,48 @@ import { getSearchHandler } from 'postgres-searchbox';
 export default getSearchHandler({
   settings: {
     attributesToHighlight: ['column_name_here'],
+  },
+});
+```
+
+For the HierarchicalMenu component, data shold be saved in your table in the following format.
+The column names are unimportant,
+
+- Use null values where a row is not categorized at that level.
+- Column values should contain the names of parent categories. e.g. Appliances > Fans
+- If you row is categorized 2 levels deep, it's still srquired to include values in columns level 0 and lavel 1.
+
+| name          | your_label_0 | your_label_1      | your_label_2                 |
+| ------------- | ------------ | ----------------- | ---------------------------- |
+| An appliance  | Appliances   | null              | null                         |
+| A generic fan | Appliances   | Appliances > Fans | null                         |
+| A box fan     | Appliances   | Appliances > Fans | Appliances > Fans > Box fans |
+
+```javascript pages/search.tsx
+const client = make_client('api/search');
+// ...
+<HierarchicalMenu
+  attributes={['your_label_0', 'your_label_1', 'your_label_2']}
+/>;
+```
+
+On server side config, include only level zero of hierachal categories in the renderingContent parameter.
+
+```javascript pages/api/search.ts
+import { getSearchHandler } from 'postgres-searchbox';
+export default getSearchHandler({
+  settings: {
+    renderingContent: {
+      facetOrdering: {
+        facets: {
+          order: [
+            'brand'
+            'your_label_0', // Don't include 'your_label_1', 'your_label_2' etc.
+            'price'
+          ],
+        },
+      },
+    },
   },
 });
 ```
