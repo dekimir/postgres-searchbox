@@ -19,7 +19,7 @@ export async function importData({ tableName }: { tableName: string }) {
   // download the file with fetch
   const source =
     'https://raw.githubusercontent.com/data-envoy/datasets/main/bestbuy.sql';
-  // decleare a path for the file
+  // declare a path for the file
   const target = '/tmp/bestbuy.sql';
   // Check if file exists at target
   if (!fs.existsSync(target)) {

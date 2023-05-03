@@ -6,7 +6,7 @@ import format from 'pg-format';
 let previousBrand: string = '';
 
 function createRandomProduct(i: number, fakerSeed: number) {
-  // Set seed so that values are consistent even when aditional
+  // Set seed so that values are consistent even when additional
   // faker.x() calls are added here.
   // Any new faker calls should be added to the end of this function
   // to avoid changing the results of existing faker calls.
