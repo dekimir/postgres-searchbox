@@ -115,8 +115,8 @@ export async function importData({ tableName }: { tableName: string }) {
 
 /**
  * Run the script when called from package.json
- * Self init functions because top-level await is
- * un-supported in node < v14.8.0.
+ * Self init async functions functions because of issues
+ * with top-level await and with swc (dev and test scripts)
  */
 
 (async () => {

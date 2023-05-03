@@ -79,17 +79,17 @@ export async function dropColumnAndIndex({ tableName }: { tableName: string }) {
   client.end();
 }
 
+const errorString = `
+Did you forget to set PG_SB_TABLE_NAME?. 
+Try running: PG_SB_TABLE_NAME=table_name yarn script:create-index 
+OR PG_SB_TABLE_NAME=table_name yarn script:drop-index
+`;
+
 /**
  * Run the script when called from package.json
- * Self init functions because top-level await is
- * un-supported in node < v14.8.0.
+ * Self init async functions functions because of issues
+ * with top-level await and with swc (dev and test scripts)
  */
-
-const errorString = `
-  Did you forget to set PG_SB_TABLE_NAME?. 
-  Try running: PG_SB_TABLE_NAME=table_name yarn script:create-index 
-  OR PG_SB_TABLE_NAME=table_name yarn script:drop-index
-`;
 
 if (process.env.PG_SB_CREATE_COL_AND_INDEX === 'true') {
   const tableName = process.env.PG_SB_TABLE_NAME;
