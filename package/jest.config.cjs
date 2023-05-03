@@ -1,10 +1,8 @@
 module.exports = {
-  testMatch: [
-    '<rootDir>/**/*.test.{ts,tsx,js,jsx}',
-    '<rootDir>/*.test.{ts,tsx,js,jsx}',
-  ],
+  testMatch: ['<rootDir>/test/**/*.test.{ts,tsx,js,jsx}'],
   collectCoverage: true,
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  modulePathIgnorePatterns: ['<rootDir>/build/'],
   transform: {
     '^.+\\.(t|j)sx?$': ['@swc/jest'],
   },
