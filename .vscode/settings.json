@@ -27,6 +27,7 @@
     "titletype",
     "tsquery",
     "tsvector",
+    "unaccent",
     "unretrievable",
     "websearch"
   ]

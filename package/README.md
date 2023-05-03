@@ -156,12 +156,12 @@ export default getSearchHandler({
 });
 ```
 
-For the HierarchicalMenu component, data shold be saved in your table in the following format.
+For the HierarchicalMenu component, data should be saved in your table in the following format.
 The column names are unimportant,
 
 - Use null values where a row is not categorized at that level.
 - Column values should contain the names of parent categories. e.g. Appliances > Fans
-- If you row is categorized 2 levels deep, it's still srquired to include values in columns level 0 and lavel 1.
+- If you row is categorized 2 levels deep, it's still required to include values in columns level 0 and level 1.
 
 | name          | your_label_0 | your_label_1      | your_label_2                 |
 | ------------- | ------------ | ----------------- | ---------------------------- |
@@ -177,7 +177,7 @@ const client = make_client('api/search');
 />;
 ```
 
-On server side config, include only level zero of hierachal categories in the renderingContent parameter.
+On server side config, include only level zero of hierarchal categories in the renderingContent parameter.
 
 ```javascript pages/api/search.ts
 import { getSearchHandler } from 'postgres-searchbox';
