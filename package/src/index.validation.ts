@@ -1,15 +1,10 @@
 import { z } from 'zod';
 // Constants
-import {
-  MAX_REQ_PER_HTTP_REQ,
-  MAX_HITS_PER_PAGE,
-  MAX_HITS_TOTAL,
-  MAX_PAGES,
-} from './constants.js';
+import { MAX_REQ_PER_HTTP_REQ } from './constants.js';
 // Lib
 import { destructureNumericFilter } from './lib/filters.js';
 // Utils
-import { implement, isIn, undefinedOrLte } from './utils/index.js';
+import { implement, isIn } from './utils/index.js';
 // Types
 import type { SearchOptions } from './client.types.js';
 import type { Handler } from './index.types.js';
@@ -47,11 +42,11 @@ export const SearchOptionsSchema = implement<SearchOptions>().with({
   // * Pagination
   // * ✅ 4/4 ✅
   // Optional pagination params
-  page: z.number().gte(0).lte(MAX_PAGES).optional(),
-  hitsPerPage: z.number().gte(0).lte(MAX_HITS_PER_PAGE).optional(),
+  page: z.number().gte(0).optional(),
+  hitsPerPage: z.number().gte(0).optional(),
   // We should either have (page & hitsPerPage) or (offset & length)
-  offset: z.number().gte(0).lte(MAX_HITS_TOTAL).optional(),
-  length: z.number().gte(1).lte(MAX_HITS_PER_PAGE).optional(),
+  offset: z.number().gte(0).optional(),
+  length: z.number().gte(1).optional(),
   // * Advanced
   // * ✅ 1/14 🛑
   maxFacetHits: z.number().optional(),
@@ -86,7 +81,7 @@ const RequestSchemaInitial = z.object({
 
 export const initialValidation = (payload: any) => {
   const Payload = z.object({
-    requests: z.array(RequestSchemaInitial).max(MAX_REQ_PER_HTTP_REQ),
+    requests: z.array(RequestSchemaInitial).min(1).max(MAX_REQ_PER_HTTP_REQ),
   });
 
   return Payload.safeParse(payload);
@@ -128,15 +123,30 @@ export const validatePayload = (
    * facet type also has 2 additional properties.
    */
 
-  const RequestSchemaRefined = RequestSchema.refine(
-    ({ params: { attributesToRetrieve } }) =>
-      validAttributesToRetrieve.includes('*') ||
-      isIn(
-        attributesToRetrieve || mergedSettings.attributesToRetrieve,
-        validAttributesToRetrieve
-      ),
-    'Invalid attributesToRetrieve, not contained by validAttributesToRetrieve'
+  const RequestSchemaRefined = RequestSchema.and(
+    z.object({
+      params: z.object({
+        page: z.number().lte(maxPage).optional(),
+        hitsPerPage: z.number().lte(maxHitsPerPage).optional(),
+        offset: z.number().lte(maxOffset).optional(),
+        length: z.number().lte(maxLength).optional(),
+      }),
+    })
   )
+    .refine(
+      ({ params: { attributesToRetrieve } }) =>
+        validAttributesToRetrieve.includes('*') ||
+        isIn(
+          attributesToRetrieve || mergedSettings.attributesToRetrieve,
+          validAttributesToRetrieve
+        ),
+      {
+        message:
+          'Invalid attributesToRetrieve, expected array to be contained by validAttributesToRetrieve',
+        path: ['params', 'attributesToRetrieve'],
+        params: { validAttributesToRetrieve },
+      }
+    )
     .refine(
       ({ params: { attributesToHighlight } }) =>
         validAttributesToHighlight.includes('*') ||
@@ -144,24 +154,12 @@ export const validatePayload = (
           attributesToHighlight || mergedSettings.attributesToHighlight,
           validAttributesToHighlight
         ),
-      'Invalid attributesToHighlight, not contained by validAttributesToHighlight'
-    )
-    .refine(
-      ({ params: { page } }) => undefinedOrLte(page, maxPage),
-      'Invalid page'
-    )
-    .refine(
-      ({ params: { hitsPerPage } }) =>
-        undefinedOrLte(hitsPerPage, maxHitsPerPage),
-      'Invalid hitsPerPage'
-    )
-    .refine(
-      ({ params: { offset } }) => undefinedOrLte(offset, maxOffset),
-      'Invalid offset'
-    )
-    .refine(
-      ({ params: { length } }) => undefinedOrLte(length, maxLength),
-      'Invalid length'
+      {
+        message:
+          'Invalid attributesToHighlight, expected array to be contained by validAttributesToHighlight',
+        path: ['params', 'attributesToHighlight'],
+        params: { validAttributesToHighlight },
+      }
     )
     .refine(
       ({ params: { highlightPostTag } }) =>
@@ -169,7 +167,12 @@ export const validatePayload = (
           highlightPostTag || mergedSettings.highlightPostTag,
           validHighlightPostTags
         ),
-      'Invalid highlightPostTag, not in validHighlightPostTags'
+      {
+        message:
+          'Invalid highlightPostTag, expected string to be in validHighlightPostTags',
+        path: ['params', 'highlightPostTag'],
+        params: { validHighlightPostTags },
+      }
     )
     .refine(
       ({ params: { highlightPreTag } }) =>
@@ -177,28 +180,66 @@ export const validatePayload = (
           highlightPreTag || mergedSettings.highlightPreTag,
           validHighlightPreTags
         ),
-      'Invalid highlightPreTag, not in validHighlightPostTags'
+      {
+        message:
+          'Invalid highlightPreTag, expected string to be in validHighlightPostTags',
+        path: ['params', 'highlightPreTag'],
+        params: { validHighlightPreTags },
+      }
     )
-    .refine(({ params: { facetFilters } }) => {
-      if (!facetFilters || validFacetFilters.includes('*')) return true;
-      const facets = facetFilters.flat().map((v) => v.split(':')[0]);
-      return facets.every((v) => validFacetFilters.includes(v));
-    }, 'Invalid facetFilters')
-    .refine(({ params: { numericFilters } }) => {
-      if (!numericFilters || validFacetFilters.includes('*')) return true;
-      return numericFilters
-        .flat()
-        .map((v) => {
-          const { attribute, operator, value } = destructureNumericFilter(v);
-          return validFacetFilters.includes(attribute) && !!operator && !!value;
-        })
-        .every((v) => v);
-    }, 'Invalid numericFilters')
-    .refine(({ type, facet, params: { facetQuery } }) => {
-      if (type !== 'facet') return true;
-      return facet?.length && facetQuery;
-    }, 'Invalid facet search');
-
+    .refine(
+      ({ params: { facetFilters } }) => {
+        if (!facetFilters || validFacetFilters.includes('*')) return true;
+        const facets = facetFilters.flat().map((v) => v.split(':')[0]);
+        return isIn(facets, validFacetFilters);
+      },
+      {
+        message:
+          'Invalid facetFilters, expected array to be contained by validFacetFilters',
+        path: ['params', 'facetFilters'],
+        params: { validFacetFilters },
+      }
+    )
+    .refine(
+      ({ params: { numericFilters } }) => {
+        if (!numericFilters || validFacetFilters.includes('*')) return true;
+        return numericFilters
+          .flat()
+          .map((v) => {
+            const { attribute, operator, value } = destructureNumericFilter(v);
+            return (
+              validFacetFilters.includes(attribute) && !!operator && !!value
+            );
+          })
+          .every((v) => v);
+      },
+      {
+        message:
+          'Invalid numericFilters, expected array to be contained by validFacetFilters',
+        path: ['params', 'numericFilters'],
+        params: { validFacetFilters },
+      }
+    )
+    .refine(
+      ({ type, facet }) => {
+        if (type !== 'facet') return true;
+        return facet?.length;
+      },
+      {
+        message: 'Invalid facet expected string when `type: facet`',
+        path: ['facet'],
+      }
+    )
+    .refine(
+      ({ type, params: { facetQuery } }) => {
+        if (type !== 'facet') return true;
+        return facetQuery;
+      },
+      {
+        message: 'Invalid facetQuery expected string when `type: facet`',
+        path: ['params', 'facetQuery'],
+      }
+    );
   return RequestSchemaRefined.safeParse(request);
 };
 

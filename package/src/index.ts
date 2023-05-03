@@ -2,7 +2,7 @@ import format from 'pg-format';
 import { defaults, VECTOR_COLUMN } from './constants.js';
 import validate from './index.validation.js';
 import * as lib from './lib/index.js';
-import { pick, getClient } from './utils/index.js';
+import { pick, getClient, getPublicError } from './utils/index.js';
 import type {
   Handler,
   Inferred,
@@ -38,8 +38,8 @@ export async function searchHandler(
   const parsed = validate.initial(json);
 
   if (!parsed.success) {
-    console.error(parsed.error.issues); // TODO maybe put error logs behind a flag
-    return res.status(400).json({ error: 'Request contained invalid payload' });
+    console.error(parsed.error); // TODO maybe put error logs behind a flag
+    return res.status(400).json(getPublicError(parsed.error));
   }
 
   /**
@@ -68,20 +68,24 @@ export async function searchHandler(
     resultsPromises.map((p) => p.catch((e) => e))
   );
 
-  // If any of the results is an error, return 400
   const errors = results.filter((result) => result instanceof Error);
-  if (errors.length) {
-    console.error(errors[0].stack);
-    // Don't return the error stack to the browser
-    const browserError =
-      errors[0].name === 'ZodError'
-        ? 'Request contained invalid payload'
-        : 'Request caused an error';
-    return res.status(400).json({ error: browserError });
-  }
 
   // If all results are valid, return 200
-  res.status(200).json({ results });
+  if (!errors?.length) {
+    return res.status(200).json({ results });
+  }
+
+  // If an error was found in the results, return 400
+  const body = results.map((result) => {
+    if (result instanceof Error) {
+      // Log the error
+      console.error(result);
+      return getPublicError(result);
+    }
+    return result;
+  });
+
+  res.status(400).json({ results: body });
 }
 
 /**
@@ -240,9 +244,12 @@ const handleRequest = async (
     pagination.db.limit
   );
 
-  // console.log(formattedSql);
+  const result: DatabaseResult = await client.query(formattedSql).catch((e) => {
+    // Create and log an error here to get the file and line number
+    console.error(new Error('Database error in handleRequest'));
+    throw e; // rethrow the error
+  });
 
-  const result: DatabaseResult = await client.query(formattedSql);
   const {
     hits,
     totalHits,
@@ -402,7 +409,11 @@ const handleFacetSearch = async (
     facet
   );
 
-  const result = await client.query(formattedSql);
+  const result = await client.query(formattedSql).catch((e) => {
+    // Create and log an error here to get the file and line number
+    console.error(new Error('Database error in handleFacetSearch'));
+    throw e; // rethrow the error
+  });
 
   return {
     facetHits: result.rows as FacetHit[],

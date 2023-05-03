@@ -222,7 +222,15 @@ describe('requestHandler', () => {
     // Test status and json are called
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
-      error: 'Request contained invalid payload',
+      results: [
+        [
+          {
+            code: 'too_big',
+            path: ['params', 'page'],
+            message: 'Number must be less than or equal to 100',
+          },
+        ],
+      ],
     });
 
     const req2 = {
@@ -344,9 +352,18 @@ describe('requestHandler', () => {
     // It should have returned an error
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
-      error: 'Request contained invalid payload',
+      results: [
+        [
+          {
+            code: 'custom',
+            path: ['params', 'attributesToRetrieve'],
+            message:
+              'Invalid attributesToRetrieve, expected array to be contained by validAttributesToRetrieve',
+            params: { validAttributesToRetrieve: ['name'] },
+          },
+        ],
+      ],
     });
-    expect(consoleSpy).toBeCalledTimes(1);
   });
 
   it('should handle highlighting', async () => {
@@ -403,9 +420,18 @@ describe('requestHandler', () => {
     // It should have returned an error
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
-      error: 'Request contained invalid payload',
+      results: [
+        [
+          {
+            code: 'custom',
+            path: ['params', 'attributesToHighlight'],
+            message:
+              'Invalid attributesToHighlight, expected array to be contained by validAttributesToHighlight',
+            params: { validAttributesToHighlight: ['name'] },
+          },
+        ],
+      ],
     });
-    expect(consoleSpy).toBeCalledTimes(1);
   });
 
   it('should return facets on request with empty query', async () => {

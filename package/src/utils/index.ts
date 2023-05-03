@@ -1,4 +1,5 @@
 import { z } from 'zod';
+export * from './errors.js';
 export * from './pg.js';
 
 /**
