@@ -2,5 +2,33 @@
   "editor.formatOnSave": true,
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "cSpell.words": [
+    "algoliasearch",
+    "Apollotech",
+    "bestbuy",
+    "ILIKE",
+    "IMDB",
+    "indexdef",
+    "indexname",
+    "instantsearch",
+    "nextjs",
+    "PGDATABASE",
+    "PGHOST",
+    "PGPASSWORD",
+    "PGUSER",
+    "primarytitle",
+    "runtimeminutes",
+    "Searchbox",
+    "snippeting",
+    "startyear",
+    "swcrc",
+    "tablename",
+    "titletype",
+    "tsquery",
+    "tsvector",
+    "unaccent",
+    "unretrievable",
+    "websearch"
+  ]
 }

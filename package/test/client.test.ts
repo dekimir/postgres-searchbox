@@ -7,7 +7,7 @@ import { make_client } from '@/client.js';
 describe('client', () => {
   it('should return results: mock', async () => {
     // This url should not be hit, because it fetch has been hijacked by jest.spyOn
-    // Regardles, use a port that's out of range to ensure no conflicts with running services
+    // Regardless, use a port that's out of range to ensure no conflicts with running services
     const url = 'http://localhost:77777777/api/search';
 
     try {

@@ -1,26 +1,75 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`requestHandler should handle highlighting 1`] = `
-[
-  {
-    "_highlightResult": {
-      "description": {
-        "fullyHighlighted": false,
-        "matchLevel": "full",
-        "matchedWords": [],
-        "value": "__ais-highlight__Football__/ais-highlight__ __ais-highlight__awesome__/ais-highlight__ Is Good For Training And Recreational Purposes",
-      },
-      "name": {
-        "fullyHighlighted": false,
-        "matchLevel": "full",
-        "matchedWords": [],
-        "value": "__ais-highlight__Awesome__/ais-highlight__ Concrete Towels",
-      },
+{
+  "_highlightResult": {
+    "description": {
+      "fullyHighlighted": false,
+      "matchLevel": "full",
+      "matchedWords": [],
+      "value": "__ais-highlight__Ball__/ais-highlight__ Carbonite web goalkeeper gloves are ergonomically designed to give easy fit",
     },
-    "description": "The Football awesome Is Good For Training And Recreational Purposes",
-    "id": 31,
-    "name": "Awesome Concrete Towels",
-    "price": 3187,
+    "name": {
+      "fullyHighlighted": false,
+      "matchLevel": "full",
+      "matchedWords": [],
+      "value": "__ais-highlight__Bespoke__/ais-highlight__ Cotton __ais-highlight__Ball__/ais-highlight__",
+    },
   },
-]
+  "brand": "Bauch - Leannon",
+  "description": "Ball Carbonite web goalkeeper gloves are ergonomically designed to give easy fit",
+  "id": 7,
+  "name": "Bespoke Cotton Ball",
+  "price": 28,
+}
+`;
+
+exports[`requestHandler should return facets on request with empty query 1`] = `
+{
+  "brand": {
+    "Altenwerth LLC": 2,
+    "Beier Group": 2,
+    "Dibbert - O'Kon": 2,
+    "Dibbert, Hermann and Nienow": 2,
+    "Donnelly - Klocko": 2,
+    "Mohr, Kessler and Bernhard": 2,
+    "Ratke, Reilly and Halvorson": 2,
+    "Schuster Group": 2,
+    "Stracke and Sons": 2,
+    "Tromp - Connelly": 2,
+  },
+  "price": {
+    "11": 7,
+    "14": 6,
+    "15": 6,
+    "17": 6,
+    "18": 9,
+    "27": 10,
+    "28": 6,
+    "30": 7,
+    "31": 9,
+    "40": 6,
+  },
+}
+`;
+
+exports[`requestHandler should return facets on request with empty query 2`] = `
+{
+  "price": {
+    "avg": 23.94,
+    "max": 40,
+    "min": 10,
+    "sum": 3591,
+  },
+}
+`;
+
+exports[`requestHandler should return results 1`] = `
+{
+  "brand": "Conroy, Hudson and Kessler",
+  "description": "Andy shoes are designed to keeping in mind durability as well as trends, the most stylish range of shoes & sandals",
+  "id": 11,
+  "name": "Modern Plastic Keyboard",
+  "price": 13,
+}
 `;

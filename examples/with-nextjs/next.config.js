@@ -10,7 +10,7 @@ const nextConfig = {
       {
         // For now, redirect root to /movies
         source: '/',
-        destination: '/movies',
+        destination: '/store',
         permanent: true,
       },
     ];

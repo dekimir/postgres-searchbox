@@ -13,10 +13,8 @@ export const getPagination = (params: GetPaginationParams): Pagination => {
     // set nbPages to 0 if there are no hits
     ...(!totalHits && { nbPages: 0 }),
     // set nbPages to the number of pages if there are hits and hitsPerPage is set
-    ...(totalHits &&
-      res.hitsPerPage && {
-        nbPages: Math.ceil(totalHits / res.hitsPerPage),
-      }),
+    nbPages:
+      totalHits && res.hitsPerPage ? Math.ceil(totalHits / res.hitsPerPage) : 0,
   });
 
   if (params.offset !== undefined) {
@@ -24,6 +22,8 @@ export const getPagination = (params: GetPaginationParams): Pagination => {
       res: {
         offset: params.offset,
         length: params.length ?? 20,
+        hitsPerPage: params.hitsPerPage,
+        page: Math.floor(params.offset / params.hitsPerPage),
       },
       db: {
         offset: params.offset,

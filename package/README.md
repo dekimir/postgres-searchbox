@@ -102,7 +102,7 @@ To put up a web page with a searchbox for your table's contents, use the Instant
 illustrated in the example at the beginning of this document. Provide the URL from the last step to the
 `make_client` function and the table name to the `indexName` parameter.
 
-In the `<Hit>` component, you can access any row field using `{hit.<fieldname>}`, like in the example.
+In the `<Hit>` component, you can access any row field using `{hit.<fieldName>}`, like in the example.
 
 ### Compatibility
 
@@ -115,6 +115,8 @@ The following components should work.:
 - Pagination
 - SortBy
 - Highlight
+- DynamicWidgets
+- HierarchicalMenu
 
 Sorting by columns is supported. Use the syntax `?column_name(+asc|+desc)?(+nulls+last)?,column_name_2(+asc|+desc)...`.
 
@@ -133,28 +135,171 @@ By default Postgres sorts asc and returns null values first. So they can be left
 />
 ```
 
-The Highlight widget works, only because it does not use _all properties_ of the usual Algolina response.
+The Highlight widget works, only because it does not use _all properties_ of the usual Algolia response.
 If you use a custom UI that relies on properties `{ matchedWords, matchLevel, fullyHighlighted }` then it wont
 work correctly. See the issue https://github.com/dekimir/postgres-searchbox/issues/8
 
-Highlight requires some config to work correctly.
+Highlight requires some config to work correctly. See Configuring section or a full explanation.
 
 ```javascript pages/search.tsx
-const client = make_client('api/search', {
-  highlightColumns: ['column_name_here', 'column_2'],
-});
+const client = make_client('api/search');
 // ...
-<Highlight hit={hit} attribute="primarytitle" className="Hit-label" />;
+<Highlight hit={hit} attribute="column_name_here" className="Hit-label" />;
 ```
 
 ```javascript pages/api/search.ts
 import { getSearchHandler } from 'postgres-searchbox';
-export default getSearchHandler([
-  {
-    tableName: 'table_name_here',
-    validHighlightColumns: ['column_name_here', 'column_2'],
+export default getSearchHandler({
+  settings: {
+    attributesToHighlight: ['column_name_here'],
   },
-]);
+});
+```
+
+For the HierarchicalMenu component, data should be saved in your table in the following format.
+The column names are unimportant,
+
+- Use null values where a row is not categorized at that level.
+- Column values should contain the names of parent categories. e.g. Appliances > Fans
+- If you row is categorized 2 levels deep, it's still required to include values in columns level 0 and level 1.
+
+| name          | your_label_0 | your_label_1      | your_label_2                 |
+| ------------- | ------------ | ----------------- | ---------------------------- |
+| An appliance  | Appliances   | null              | null                         |
+| A generic fan | Appliances   | Appliances > Fans | null                         |
+| A box fan     | Appliances   | Appliances > Fans | Appliances > Fans > Box fans |
+
+```javascript pages/search.tsx
+const client = make_client('api/search');
+// ...
+<HierarchicalMenu
+  attributes={['your_label_0', 'your_label_1', 'your_label_2']}
+/>;
+```
+
+On server side config, include only level zero of hierarchal categories in the renderingContent parameter.
+
+```javascript pages/api/search.ts
+import { getSearchHandler } from 'postgres-searchbox';
+export default getSearchHandler({
+  settings: {
+    renderingContent: {
+      facetOrdering: {
+        facets: {
+          order: [
+            'brand'
+            'your_label_0', // Don't include 'your_label_1', 'your_label_2' etc.
+            'price'
+          ],
+        },
+      },
+    },
+  },
+});
+```
+
+## Configuring
+
+There are two ways to configure the behavior of postgres-searchbox: server-side and client-side.
+You can get started with zero-config, but configuring will alow for a faster and more secure setup.
+
+Important terminology. With instantsearch, Algolia have used terms that don't exactly translate to Postgres or SQL
+
+- indexName means the source of the search results, this is the Postgres table name.
+- attribute means a value associated with a search result, e.g. id, name, url etc.
+  it's similar to a column value but it's not an exact translation,
+  for example in Postgres a search results attribute could be in a different table.
+  For now, postgres-searchbox does not work with cross-table attributes.
+- facets, these are the attribute keys like color, price etc. In Postgres, they're column names.
+
+### Server side
+
+The default server-side config is at [/package/src/constants.ts]. The defaults are fine during development,
+but they fetch all attributes as facets and return all attributes in the search response.
+
+The defaults should not be used in production for 2 reasons.
+
+1. Security. You may be exposing data that should not leave the server.
+1. Performance. Returning all attributes in an extra load on the server and network.
+
+This can be addressed by explicitly setting `attributesToRetrieve` when instantiating getSearchHandler like:
+
+```javascript pages/api/search.ts
+import { getSearchHandler } from 'postgres-searchbox';
+export default getSearchHandler({
+  settings: { attributesToRetrieve: ['name'] },
+});
+```
+
+The settings property map directly to
+[Algolia Settings API Parameters](https://www.algolia.com/doc/api-reference/settings-api-parameters/),
+but are only a subset of Algolia. They can be set with type-safety and autofill `ctrl + space` in VSCode.
+
+If your searchHandler should handle multiple indexes, instead of passing one config object you can pass in an
+array of configs like this. Make sure to set the indexName property for each config - and that each index has
+already been created with the create-index script.
+
+```javascript pages/api/search.ts
+[
+  {
+    indexName: 'postgres_searchbox_movies',
+  },
+  {
+    indexName: 'bestbuy_product',
+    settings: { attributesToRetrieve: ['name'] },
+  },
+];
+```
+
+Sometimes server-side config is not flexible enough, maybe you have an app and website hitting the same endpoint.
+And, the app and website need different attributes.
+In this case, use the client config as explained below, but set some server-side validation with the
+clientValidation property.
+
+```javascript pages/api/search.ts
+export default getSearchHandler({
+  clientValidation: {
+    validAttributesToRetrieve: [
+      'id',
+      'name',
+      'price',
+      'description',
+      'mobile_column',
+      'web_column',
+    ],
+    validAttributesToHighlight: ['column_name_here', 'column_2', 'column_3'],
+  },
+});
+```
+
+### Client side
+
+The client-side options map directly to
+[Algolia Search API Parameters](https://www.algolia.com/doc/api-reference/search-api-parameters/),
+but are only a subset of Algolia.
+
+They can be set with type-safety and autofill.
+
+```javascript pages/search.tsx
+import { Configure } from 'react-instantsearch-hooks-web';
+import { make_client } from 'postgres-searchbox/client';
+import type { SearchOptions } from 'postgres-searchbox/client.types';
+const client = make_client('api/search');
+const configureProps: SearchOptions = {
+  validAttributesToRetrieve: [
+    'id',
+    'name',
+    'price',
+    'description',
+    'web_column',
+  ],
+  attributesToHighlight: ['column_name_here', 'column_2'],
+};
+<InstantSearch searchClient={client} indexName="table_name_here">
+  <Configure {...configureProps} />
+  <SearchBox />
+  <Hits hitComponent={Hit} />
+</InstantSearch>;
 ```
 
 # Limitations
@@ -168,7 +313,7 @@ Postgres is not quite at the Elastic level of functionality yet. For example, it
 for mistyped terms, and its multi-language support is uneven.
 
 The search index created by `postgres-searchbox` is the general search index, whose performance isn't necessarily
-optimal for all possible usecases. There are other indexing options, which require customization by an experienced
+optimal for all possible use cases. There are other indexing options, which require customization by an experienced
 developer.
 
 It's also worth mentioning that `postgres-searchbox` currently requires a precise match for diacritics (accents on
@@ -210,9 +355,14 @@ Getting started without docker
   - PGDATABASE
 - `yarn test:watch`
 
-## Realworld data
+## Real-world data
 
-To work with a dataset of 10M rows. You can import https://datasets.imdbws.com/title.basics.tsv.gz from imdb.
+To work with a modest dataset of 20K rows. You can import an Algolia dataset
+[algolia/instant-search-demo](https://github.com/algolia/instant-search-demo) collected from the bestbuy API.
+A helper script to create a table, download, insert, and index the data is at `packages/scripts/create-store.ts`.
+To run this script `yarn install` and `yarn script:create-store`, the database is around 20MB.
+
+To work with a dataset of 10M rows. You can import https://datasets.imdbws.com/title.basics.tsv.gz from IMDB.
 A helper script to create a table, download, insert, and index the data is at `packages/scripts/create-movies.ts`.
 To run this script `yarn install` and `yarn script:create-movies` this could take 5-10 minutes.
 
@@ -224,12 +374,14 @@ postgres-searchbox installed. See the 3 files:
 
 - `examples/with-nextjs/pages/api/search.ts`
 - `examples/with-nextjs/pages/movies.tsx`
-- `examples/with-nextjs/styles/Movies.module.css`
+- `examples/with-nextjs/pages/store.tsx`
 
 In `examples/with-nextjs` you can `yarn && yarn dev` to get the dev. server running.
-You can see the movies page at http://locaalhost:3000/movies
 
-NextJS can import the `package/build/*.js` files, to keep them up to date run `yarn build:watch-swc` from a 2nd terminal.
+- You can see the movies page at http://locaalhost:3000/movies
+- You can see the store page at http://locaalhost:3000/store
+
+NextJS can import the `package/build/*.js` files, to keep them up to date run `yarn dev` from a 2nd terminal.
 
 Using swc here is orders of magnitude faster than tsc. The downside is that it doesn't check for type correctness.
 

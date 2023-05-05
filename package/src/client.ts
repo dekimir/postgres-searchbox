@@ -1,19 +1,13 @@
-interface Query {
-  [key: string]: unknown;
-}
+import { Request } from './client.types';
 
-export interface ClientOptions {
-  highlightColumns?: string[];
-  returnColumns?: string[];
-  language?: string;
-}
-
-export function make_client(searchApiUrl: string, pgOptions?: ClientOptions) {
+export function make_client(searchApiUrl: string) {
   return {
-    search: async (queries: Query[]) => {
+    search: async (requests: Request[]) => {
       const resp = await fetch(searchApiUrl, {
         method: 'POST',
-        body: JSON.stringify({ ...queries[0], pgOptions }),
+        body: JSON.stringify({
+          requests,
+        }),
         headers: { 'Content-Type': 'application/json' },
       });
       if (!resp.ok) {

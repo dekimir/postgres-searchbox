@@ -2,10 +2,11 @@
 
 exports[`integration should return results from real server: no options 1`] = `
 {
-  "description": "The Apollotech B340 is an affordable wireless mouse with reliable connectivity, 12 months battery life and modern design",
-  "id": 4,
-  "name": "Bespoke Cotton Keyboard",
-  "price": 8026,
+  "brand": "Conroy, Hudson and Kessler",
+  "description": "Andy shoes are designed to keeping in mind durability as well as trends, the most stylish range of shoes & sandals",
+  "id": 11,
+  "name": "Modern Plastic Keyboard",
+  "price": 13,
 }
 `;
 
@@ -16,18 +17,18 @@ exports[`integration should return results from real server: with options 1`] = 
       "fullyHighlighted": false,
       "matchLevel": "full",
       "matchedWords": [],
-      "value": "The Apollotech B340 is an __ais-highlight__affordable__/ais-highlight__ wireless mouse with reliable connectivity, 12 months battery life",
+      "value": "Andy shoes are __ais-highlight__designed__/ais-highlight__ to keeping in mind durability as well as trends, the most",
     },
     "name": {
       "fullyHighlighted": false,
       "matchLevel": "full",
       "matchedWords": [],
-      "value": "Bespoke Cotton __ais-highlight__Keyboard__/ais-highlight__",
+      "value": "Modern Plastic __ais-highlight__Keyboard__/ais-highlight__",
     },
   },
-  "description": "The Apollotech B340 is an affordable wireless mouse with reliable connectivity, 12 months battery life and modern design",
-  "id": 4,
-  "name": "Bespoke Cotton Keyboard",
-  "price": 8026,
+  "description": "Andy shoes are designed to keeping in mind durability as well as trends, the most stylish range of shoes & sandals",
+  "id": 11,
+  "name": "Modern Plastic Keyboard",
+  "price": 13,
 }
 `;

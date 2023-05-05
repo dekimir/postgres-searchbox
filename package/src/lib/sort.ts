@@ -4,12 +4,12 @@ export const getTableAndSort = (
   indexName: string
 ): {
   table: string;
-  formatedSort: string;
+  formattedSort: string;
 } => {
   const [table, queryString] = indexName.split('?');
   // Validate table name
   if (!table?.length) throw new Error('Invalid index name');
-  if (!queryString) return { table, formatedSort: '' };
+  if (!queryString) return { table, formattedSort: '' };
   // make a searchParams object from query string
   // format each sort and join them with a comma
   const sort = new URLSearchParams(queryString)
@@ -32,6 +32,6 @@ export const getTableAndSort = (
 
   return {
     table,
-    formatedSort: !sort?.length ? '' : `ORDER BY ${sort}`,
+    formattedSort: !sort?.length ? '' : `ORDER BY ${sort}`,
   };
 };

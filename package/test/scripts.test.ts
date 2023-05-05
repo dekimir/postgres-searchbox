@@ -73,7 +73,7 @@ describe('scripts', () => {
     await initTestDatabase(initTestDatabaseParams);
     const columnNames = await getTextColumnsFromTable({ tableName });
 
-    expect(columnNames).toEqual(['name', 'description']);
+    expect(columnNames).toEqual(['name', 'description', 'brand']);
   });
 
   /**
@@ -131,6 +131,7 @@ describe('scripts', () => {
    * CLI commands
    * - create-index
    * - drop-index
+   * - build
    */
 
   it('should create via cli command', async () => {
@@ -202,4 +203,24 @@ describe('scripts', () => {
     const indexData = await client.query(indexSql);
     expect(indexData.rows.length).toBe(0);
   });
+
+  it('should build successfully via cli command', async () => {
+    const val = await new Promise(async (resolve, reject) => {
+      exec(`yarn build`, (error, stdout, stderr) => {
+        if (error !== null) reject(error);
+        if (stderr?.length > 0) reject(stderr);
+      }).on('exit', (code) => {
+        if (code === 0) {
+          resolve(true);
+        } else {
+          reject(code);
+        }
+      });
+    });
+
+    if (val !== true) {
+      console.log(`exec error: ${val}`);
+      return expect(val).toBe(true);
+    }
+  }, 60_000);
 });

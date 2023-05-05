@@ -1,7 +1,6 @@
 {
   // .swcrc should be treated as JSONC
   "$schema": "https://json.schemastore.org/swcrc",
-  "minify": true,
   "jsc": {
     "baseUrl": ".",
     "paths": {

@@ -12,8 +12,8 @@ import { getSearchHandler } from '@/index.js';
 
 /**
  * This file is for testing the integration of server with client.
- * Although /scripts are imported here thay are not being tested
- * they're used to set the database state for the tests
+ * Although /scripts are imported here they are not being tested
+ * they're used to set the database state for the tests.
  */
 
 describe('integration', () => {
@@ -39,9 +39,14 @@ describe('integration', () => {
       '/api/search-with-options',
       getSearchHandler([
         {
-          tableName,
-          validReturnColumns: ['id', 'name', 'description', 'price'],
-          validHighlightColumns: ['name', 'description'],
+          indexName: tableName,
+          settings: {
+            attributesToRetrieve: ['id', 'name', 'description', 'price'],
+          },
+          clientValidation: {
+            validAttributesToRetrieve: ['id', 'name', 'description', 'price'],
+            validAttributesToHighlight: ['name', 'description'],
+          },
         },
       ])
     );
@@ -56,7 +61,7 @@ describe('integration', () => {
   });
 
   afterAll(async () => {
-    // Tairdown express
+    // Teardown express
     await serverListener.close();
     // Drop and close the database connection
     const dropSql = format('DROP TABLE IF EXISTS %I', tableName);
@@ -74,7 +79,7 @@ describe('integration', () => {
     const response = await client.search([
       {
         indexName: tableName,
-        params: { query: 'affordable keyboard' },
+        params: { query: 'designed keyboard' },
       },
     ]);
 
@@ -86,21 +91,16 @@ describe('integration', () => {
     await initTestDatabase(initTestDatabaseParams);
     await createColumnAndIndex({ tableName });
 
-    const client = make_client(
-      'http://localhost:3002/api/search-with-options',
-      {
-        returnColumns: ['id', 'name', 'description', 'price'],
-        highlightColumns: ['name', 'description'],
-      }
-    );
+    const client = make_client('http://localhost:3002/api/search-with-options');
 
     const response = await client.search([
       {
         indexName: tableName,
         params: {
-          query: 'affordable keyboard',
+          query: 'designed keyboard',
           highlightPreTag: '__ais-highlight__',
           highlightPostTag: '__/ais-highlight__',
+          attributesToHighlight: ['name', 'description'],
         },
       },
     ]);

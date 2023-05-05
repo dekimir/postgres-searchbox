@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`filters should return SQL from facetFilters & numericFilters 1`] = `"attribute1 IN( 'value','value2' ) AND attribute2 IN( 'value' ) AND attribute5 IN( 'value' ) AND attribute3 = 'value' AND attribute3 NOT IN ( 'value2' ) AND attribute4 = 'value2' AND price IN( '11','11','12','12','14' ) AND price NOT IN ( '8','16' ) AND ( ( price > '5' AND price <= '9' ) OR ( price >= '11' AND price <= '15' ) OR ( price >= '20' AND price < '25' ) OR price > '26' ) AND year IN( '2019' ) AND year < '2019'"`;
