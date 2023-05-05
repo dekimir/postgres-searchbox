@@ -381,7 +381,10 @@ In `examples/with-nextjs` you can `yarn && yarn dev` to get the dev. server runn
 - You can see the movies page at http://locaalhost:3000/movies
 - You can see the store page at http://locaalhost:3000/store
 
-NextJS can import the `package/build/*.js` files, to keep them up to date run `yarn dev` from a 2nd terminal.
+NextJS pages can import the locally developed postgres-searchbox; see their commented-out imports from
+`package/build`. Keep in mind, however, that `package/build` has to be periodically generated from
+`package/src`. You can automate this by running a second `yarn dev` in the `package` directory in another
+terminal. This will keep `package/build` always up-to-date with `package/src`.
 
 Using swc here is orders of magnitude faster than tsc. The downside is that it doesn't check for type correctness.
 
