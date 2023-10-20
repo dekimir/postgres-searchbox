@@ -51,11 +51,10 @@ function Hit({ hit }: { hit: any }) {
 }
 
 export default function Basic() {
-  const configureProps: SearchOptions = {};
 
   // Using only items
-  const transformItems = (items) => {
-    return items.map((item) => ({
+  const transformItems = (items: any) => {
+    return items.map((item: any) => ({
       ...item,
       objectID: item.objectid,
     }));
@@ -70,7 +69,7 @@ export default function Basic() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <InstantSearch searchClient={client} indexName="bestbuy_product">
-        <Configure {...configureProps} />
+        <Configure {...{}} />
         <div className="Container">
           <div>
             <DynamicWidgets fallbackComponent={FallbackComponent}>
